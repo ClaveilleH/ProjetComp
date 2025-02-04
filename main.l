@@ -111,8 +111,8 @@ L?\"(\\.|[^\\"])*\"     { /* A completer */ }   // JSP ce que ca fait
 // .*                      {ECHO; printf(">%d<", yylineno);};
 // .                       { return yytext[0]; }
 // [ \t\n] { fprintf (stderr, "erreur lexicale %s à la ligne %d.\n", yytext, yylineno); }
-// ({LETTRE}{LETTRE}|{NUM}) return TOKEN_VAR;
 // {D}*"."{D}+({E})?{FS}?  { /* A completer */ }
+// ({LETTRE}{LETTRE}|{NUM}) return TOKEN_VAR;
 // {D}+"."{D}*({E})?{FS}?  { /* A completer */ }
 
 int main(){
