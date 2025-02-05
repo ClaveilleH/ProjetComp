@@ -3,6 +3,7 @@ SEARCH_DIR="fichiersProf/Tests"
 DONE=0
 ALL_OPTION=false
 HIDE_OPTION=false
+TEST_OPTION=false
 DOUBLE=false
 AA_OPTION=false
 
@@ -30,13 +31,16 @@ for arg in "$@"; do
 done
 
 if [ $DOUBLE = false ]; then
-    while getopts "ah" opt; do
+    while getopts "aht" opt; do
         case $opt in
             a)
                 ALL_OPTION=true
                 ;;
             h)
                 HIDE_OPTION=true
+                ;;
+            t)
+                TEST_OPTION=true
                 ;;
             *)  
                 echo "Usage: $0 [-a] [-h]"
@@ -56,21 +60,31 @@ if [ $DONE -eq 1 ]; then
         for file in "$SEARCH_DIR"/*; do
             if [ -f "$file" ]; then
                 if [[ -f "$file" && "$file" == *.c ]]; then # si fichier .c
-                    if [ $HIDE_OPTION = true ]; then
-                        echo "Processing $file"
+                    if [ $TEST_OPTION = true ]; then
+                        echo aa
+                    else
+                        if [ $HIDE_OPTION = false ]; then
+                            echo "Processing $file"
+                        fi
+                        if [ $AA_OPTION = true ]; then
+                            # echo "Processing $file"
+                            printf "Processing %s" $file
+                        fi
+                        cat "$file" | ./comp.out
                     fi
-                    if [ $AA_OPTION = true ]; then
-                        # echo "Processing $file"
-                        printf "Processing %s" $file
-                    fi
-                    cat "$file" | ./comp.out
                 fi
             fi
         done
     else
-        if [ "$HIDE_OPTION" = false ]; then
-            echo "Processing fichiersProf/exempleminiC.c"
+        if [ $TEST_OPTION = true ]; then
+            printf "Processing fichiersProf/exempleminiC.c -->"
+            cat fichiersProf/exempleminiC.c | ./comp.out 
+            echo
+        else
+            if [ "$HIDE_OPTION" = false ]; then
+                echo "Processing fichiersProf/exempleminiC.c"
+            fi
+            cat fichiersProf/exempleminiC.c | ./comp.out
         fi
-        cat fichiersProf/exempleminiC.c | ./comp.out
     fi
 fi
