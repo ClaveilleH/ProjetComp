@@ -8,29 +8,7 @@
 void non_defini();
 
 #define TOKEN_EOF       0
-#define TOKEN_VAL       1
-#define TOKEN_VAR       2
-#define TOKEN_PLUS      3
-#define TOKEN_MOINS     4
-#define TOKEN_MUL       5
-#define TOKEN_DIV       6
-#define TOKEN_AFFECT    7
-#define TOKEN_FIN       8
-#define TOKEN_LPAR      9
-#define TOKEN_RPAR      10
 
-#define TOKEN_BREAK     11
-#define TOKEN_CASE      12
-#define TOKEN_DEFAULT   13
-#define TOKEN_ELSE      14
-#define TOKEN_EXTERN    15
-#define TOKEN_FOR       16
-#define TOKEN_IF        17
-#define TOKEN_INT       18
-#define TOKEN_SWITCH    19
-#define TOKEN_THEN      20
-#define TOKEN_VOID      21
-#define TOKEN_WHILE     22
 
 %}
 
@@ -57,8 +35,8 @@ IS                      (u|U|l|L)*
 "void"                  { non_defini(); return -1; } /* A completer */
 "while"                 { non_defini(); return -1; } /* A completer */
 
-{D}+                    {return TOKEN_VAL;}       // int
-({L}+({L}|{D})*)        {return TOKEN_VAR;}  //lettre suivie de naimporte quel combinsaison de lettre et de chiffre  {L}({L}|{D})*           { non_defini(); return -1; } /* A completer */ 
+{D}+                    {return -1;}       // int
+({L}+({L}|{D})*)        {return -1;}  //lettre suivie de naimporte quel combinsaison de lettre et de chiffre  {L}({L}|{D})*           { non_defini(); return -1; } /* A completer */ 
 
 
 0[xX]{H}+{IS}?          { non_defini(); return -1; } /* A completer  un nb haxa + u ou l jsp pk */
@@ -71,48 +49,40 @@ L?'(\\.|[^\\'])+'       { non_defini(); return -1; } /* A completer  0 ou une fo
 L?\"(\\.|[^\\"])*\"     { non_defini(); return -1; } /* A completer */   // JSP ce que ca fait
 
 
-">"                     { non_defini(); return -1; } /* A completer */
-"<"                     { non_defini(); return -1; } /* A completer */
+">"                     { return '>'; }
+"<"                     { return '<'; }
+"!"                     { return '!'; }
+"+"                     { return '+'; }
+"-"                     { return '-'; }
+"*"                     { return '*'; }
+"/"                     { return '/'; }
+"&"                     { return '&'; }
+"|"                     { return '|'; }
+"="                     { return '='; }
+"."                     { return '.'; }
+","                     { return ','; }
+";"                     { return ';'; }
+":"                     { return ':'; }
+"("                     { return '('; }
+")"                     { return ')'; }
+"{"                     { return '{'; }
+"}"                     { return '}'; }
+"["                     { return '['; }
+"]"                     { return ']'; }
+
+
 "<="                    { non_defini(); return -1; } /* A completer */
-">="                    { non_defini(); return -1; } /* A completer */
 "=="                    { non_defini(); return -1; } /* A completer */
+">="                    { non_defini(); return -1; } /* A completer */
 "!="                    { non_defini(); return -1; } /* A completer */
-
-
-"!"                     { non_defini(); return -1; } /* A completer */
 "&&"                    { non_defini(); return -1; } /* A completer */
 "||"                    { non_defini(); return -1; } /* A completer */
-
-
-"+"                     return TOKEN_PLUS;
-"-"                     return TOKEN_MOINS;
-"*"                     return TOKEN_MUL;
-"/"                     return TOKEN_DIV;
 ">>"                    { non_defini(); return -1; } /* A completer */
 "<<"                    { non_defini(); return -1; } /* A completer */
-"&"                     { non_defini(); return -1; } /* A completer */
-"|"                     { non_defini(); return -1; } /* A completer */
-
-"="                     return TOKEN_AFFECT;
-
-
-"."                     { non_defini(); return -1; } /* A completer */
-","                     { non_defini(); return -1; } /* A completer */
-";"                     return TOKEN_FIN;
-":"                     { non_defini(); return -1; } /* A completer */
-"("                     return TOKEN_LPAR;
-")"                     return TOKEN_RPAR;
-"{"                     { non_defini(); return -1; } /* A completer */
-"}"                     { non_defini(); return -1; } /* A completer */
-"["                     { non_defini(); return -1; } /* A completer */
-"]"                     { non_defini(); return -1; } /* A completer */
 
 
 "/*".*"*/"              {/* RIEN */} //! commentaires, c'est moi qui l'ai fait a verifier
-
-
 [ \t\v\n\f]             {/* RIEN */}
-
 
 .                       { fprintf (stderr, "\033[1;31mErreur lexicale\033[0m: [%s] à la ligne %d.\n", yytext, yylineno); }
 %%
