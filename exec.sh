@@ -87,4 +87,7 @@ if [ $DONE -eq 1 ]; then
             cat fichiersProf/exempleminiC.c | ./comp.out
         fi
     fi
+else
+    echo "Erreur de compilation"
+    exit 1
 fi
