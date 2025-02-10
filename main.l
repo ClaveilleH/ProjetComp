@@ -63,10 +63,10 @@ IS                      (u|U|l|L)*
 ({L}+({L}|{D})*) return TOKEN_VAR;  //lettre suivie de naimporte quel combinsaison de lettre et de chiffre  {L}({L}|{D})*           { non_defini(); return -1; } /* A completer */ 
 
 
-0[xX]{H}+{IS}?          { non_defini(); return -1; } /* A completer */   // JSP ce que ca fait
-0{D}+{IS}?              { non_defini(); return -1; } /* A completer */   // JSP ce que ca fait
-{D}+{IS}?               { non_defini(); return -1; } /* A completer */   // JSP ce que ca fait
-L?'(\\.|[^\\'])+'       { non_defini(); return -1; } /* A completer */   // JSP ce que ca fait
+0[xX]{H}+{IS}?          { non_defini(); return -1; } /* A completer */   // un nb haxa + u ou l jsp pk
+{D}+{IS}?               { non_defini(); return -1; } /* A completer */   // un chivre ou nb suivit de u ou l jsp pk
+0{D}+{IS}?              { non_defini(); return -1; } /* A completer */   // la meme qui commence par 0
+L?'(\\.|[^\\'])+'       { non_defini(); return -1; } /* A completer */   // 0 ou une fois suivit de guillemets et de n'importe quoi
 
 {D}+{E}{FS}?            { non_defini(); return -1; } /* A completer */   // des flotants avec des exposants INUTILE
 
