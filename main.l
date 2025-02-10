@@ -8,6 +8,7 @@
 void non_defini();
 
 #define TOKEN_EOF       0
+
 #define TOKEN_VAL       1
 #define TOKEN_VAR       2
 #define TOKEN_PLUS      3
@@ -18,6 +19,20 @@ void non_defini();
 #define TOKEN_FIN       8
 #define TOKEN_LPAR      9
 #define TOKEN_RPAR      10
+
+#define TOKEN_BREAK     11
+#define TOKEN_CASE      12
+#define TOKEN_DEFAULT   13
+#define TOKEN_ELSE      14
+#define TOKEN_EXTERN    15
+#define TOKEN_FOR       16
+#define TOKEN_IF        17
+#define TOKEN_INT       18
+#define TOKEN_SWITCH    19
+#define TOKEN_THEN      20
+#define TOKEN_VOID      21
+#define TOKEN_WHILE     22
+
 
 %}
 
@@ -53,9 +68,9 @@ IS                      (u|U|l|L)*
 {D}+{IS}?               { non_defini(); return -1; } /* A completer */   // JSP ce que ca fait
 L?'(\\.|[^\\'])+'       { non_defini(); return -1; } /* A completer */   // JSP ce que ca fait
 
-{D}+{E}{FS}?            { non_defini(); return -1; } /* A completer */   // JSP ce que ca fait
+{D}+{E}{FS}?            { non_defini(); return -1; } /* A completer */   // des flotants avec des exposants INUTILE
 
-L?\"(\\.|[^\\"])*\"     { non_defini(); return -1; } /* A completer */   // JSP ce que ca fait
+L?\"(\\.|[^\\"])*\"     { non_defini(); return -1; } /* A completer */   // chaines de caractères avec guillemets et echappements \
 
 
 ">"                     { non_defini(); return -1; } /* A completer */
