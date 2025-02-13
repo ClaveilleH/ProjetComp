@@ -6,6 +6,7 @@
 // #include "y.tab.h"
 
 void non_defini();
+void erreur();
 
 #define TOKEN_EOF       0
 
@@ -84,7 +85,7 @@ L?\"(\\.|[^\\"])*\"     { non_defini(); return -1; } /* A completer */   // JSP 
 "/*".*"*/"              {/* RIEN */} //! commentaires, c'est moi qui l'ai fait a verifier
 [ \t\v\n\f]             {/* RIEN */}
 
-.                       { fprintf (stderr, "\033[1;31mErreur lexicale\033[0m: [%s] à la ligne %d.\n", yytext, yylineno); }
+.                       { erreur(); }
 %%
 // \n      printf("Ligne %d\n", yylineno);
 // " "                     /*rien*/;
@@ -96,11 +97,17 @@ L?\"(\\.|[^\\"])*\"     { non_defini(); return -1; } /* A completer */   // JSP 
 // {D}+"."{D}*({E})?{FS}?  { non_defini(); return -1; } /* A completer */
 
 
+void erreur(){
+    fprintf (stderr, "\033[1;31mErreur lexicale\033[0m: [%s] à la ligne %d.\n", yytext, yylineno);
+}
+
 void non_defini(){
     // \033[1;31m 
     // \033[0m
     // seulement pour nous pour etre sur qu'on a tout setup
-    fprintf(stderr, "\033[1;31mErreur\033[0m: fonction non définie\n ligne %d : >> %s <<\n", yylineno, yytext);
+    if (0) {
+        fprintf(stderr, "\033[1;31mErreur\033[0m: fonction non définie\n ligne %d : >> %s <<\n", yylineno, yytext);
+    }
 }
 
 int main(){

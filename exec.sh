@@ -49,7 +49,7 @@ if [ $DOUBLE = false ]; then
         esac
     done
 fi
-lex main.l && gcc lex.yy.c -o comp.out -ll && DONE=1
+lex main.l && gcc -Werror lex.yy.c -o comp.out -ll && DONE=1
 
 
 
