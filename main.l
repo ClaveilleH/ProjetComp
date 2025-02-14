@@ -35,6 +35,7 @@ void erreur();
 #define TOKEN_VAR       235
 #define TOKEN_NB        234
 
+#define ERROR           fprintf (stderr, "\033[1;31mErreur lexicale\033[0m: [%s] à la ligne %d.\n", yytext, yylineno);
 
 %}
 
