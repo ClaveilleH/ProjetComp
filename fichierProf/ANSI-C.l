@@ -10,7 +10,7 @@ IS                      (u|U|l|L)*
 #include "y.tab.h"
 
 
-/* Ne gere pas les commentaires. A rajouter */
+/* Ne gère pas les commentaires. A rajouter */
 /* Supprimer les lignes dont vous n'avez pas besoin. */
 
 %}

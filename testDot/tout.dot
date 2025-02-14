@@ -1,0 +1,100 @@
+digraph mon_programme {
+    rankdir=TB; // Top to Bottom direction
+
+    // -----La déclaration d’une fonction-----
+    subgraph cluster_fonction {
+        // void foo (int a, int b){
+        // .   ..
+        // }
+        label="Déclaration d’une fonction";
+        node_mafonction [label="foo,\nvoid" shape=invtrapezium color=blue];
+        node_reste [shape=triangle label="..." style=dotted];
+        node_mafonction -> node_reste;
+    }
+
+    // -----Une séquence d’instructions-----
+    subgraph cluster_instructions {
+        label="Séquence d’instructions";
+        node_bloc [label="BLOC" shape=ellipse];
+        node_inst1 [shape=triangle label="INST1" style=dotted];
+        node_inst2 [shape=triangle label="INST2" style=dotted];
+        node_inst3 [shape=triangle label="INST3" style=dotted];
+        node_bloc -> node_inst1;
+        node_bloc -> node_inst2;
+        node_bloc -> node_inst3;
+    }
+
+    // -----L’instruction d’affectation-----
+    subgraph cluster_affectation {
+        label="Instruction d’affectation";
+        node_affect [label=":=\n" shape=ellipse];
+        node_var [shape=ellipse label="nom_var"];
+        node_expr [shape=triangle label="INST2" style=dotted];
+        node_affect -> node_var;
+        node_affect -> node_expr;
+    }
+
+    // -----Les expressions arithmétiques ou logiques-----
+    subgraph cluster_expression {
+        label="Expressions arithmétiques ou logiques";
+        node_1 [label=":=" shape=ellipse];
+        node_2 [shape=ellipse label="toto"];
+        node_3 [shape=ellipse label="-"];
+        node_4 [shape=ellipse label="*"];
+        node_5 [shape=ellipse label="*"];
+        node_6 [shape=ellipse label="/"];
+        node_7 [shape=ellipse label="x"];
+        node_8 [shape=ellipse label="y"];
+        node_9 [shape=ellipse label="z"];
+        node_10 [shape=ellipse label="t"];
+        node_11 [shape=ellipse label="6"];
+        node_1 -> node_2;
+        node_1 -> node_3;
+        node_3 -> node_4;
+        node_3 -> node_5;
+        node_4 -> node_7;
+        node_4 -> node_8;
+        node_5 -> node_6;
+        node_5 -> node_11;
+        node_6 -> node_9;
+        node_6 -> node_10;
+    }
+
+    // -----Les références à un élément de tableau-----
+    // -----Les expressions conditionnelles-----
+    //JSP
+
+    // -----L’instruction de retour d’une fonction-----
+    subgraph cluster_retour {
+        label="Instruction de retour d’une fonction";
+        node_return [label="RETURN" shape=trapezium color=blue];
+        node_exp [shape=triangle label="..." style=dotted]; 
+        node_return -> node_exp;
+    }
+
+    subgraph cluster_retour2 {
+        label="Instruction de retour d’une fonction\nAvec le code dans le pdf";
+        node_return2 [label="RETURN" shape=trapezium color=blue];
+        node_exp2 [shape=invtriangle label="..." style=dotted];
+        node_exp2 -> node_return2
+    }
+
+    // -----L’instructio/*  */n switch-----
+    // -----L’instruction de boucle for-----
+    // -----L’instruction de boucle while-----
+    // -----L’instruction break-----
+
+    // -----L’appel d’une fonction-----
+    subgraph cluster_appel_fonction {
+        label="Appel d’une fonction";
+        node_1 [label="foo" shape=septagon];
+        node_2 [shape=triangle label="param1" style=dotted];
+        node_3 [shape=triangle label="param2" style=dotted];
+        node_4 [shape=triangle label="param3" style=dotted];
+        node_1 -> node_2
+        node_1 -> node_3
+        node_1 -> node_4
+    }
+
+
+}
