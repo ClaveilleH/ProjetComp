@@ -1,5 +1,5 @@
 #!/bin/bash
-SEARCH_DIR="fichiersProf/Tests"
+SEARCH_DIR="Tests"
 DONE=0
 ALL_OPTION=false
 HIDE_OPTION=false
@@ -77,14 +77,14 @@ if [ $DONE -eq 1 ]; then
         done
     else
         if [ $TEST_OPTION = true ]; then
-            printf "Processing fichiersProf/exempleminiC.c -->"
-            cat fichiersProf/exempleminiC.c | ./comp.out 
+            printf "Processing Tests/exempleminiC.c -->"
+            cat Tests/exempleminiC.c | ./comp.out 
             echo
         else
             if [ "$HIDE_OPTION" = false ]; then
-                echo "Processing fichiersProf/exempleminiC.c"
+                echo "Processing Tests/exempleminiC.c"
             fi
-            cat fichiersProf/exempleminiC.c | ./comp.out
+            cat Tests/exempleminiC.c | ./comp.out
         fi
     fi
 fi
