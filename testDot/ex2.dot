@@ -1,0 +1,30 @@
+digraph mon_graphe {
+// Un attribut appliqué au graphe entier
+size="1,1";
+// Un attribut peut spécifier une étiquette d’un noeud
+a [label="Foo" color=red];
+// Ici l’attribut peut modifier la forme géométrique d’un noeud
+b [shape=box];
+4
+// Ici les arcs ont des propriétés différentes
+a -> b -> c [color=blue];
+b -> d [style=dotted];
+}
+
+digraph mon_graphe2 {
+// Un attribut appliqué au graphe entier
+size="";
+// Un attribut peut spécifier une étiquette d’un noeud
+a [label="AAAA" color=red];
+// Ici l’attribut peut modifier la forme géométrique d’un noeud
+b [shape=box];
+4
+// Ici les arcs ont des propriétés différentes
+a -> b -> c [color=blue];
+b -> d [style=dotted];
+c -> 4;
+4 -> a;
+c -> 5;
+4 -> 5;
+5 -> d
+}

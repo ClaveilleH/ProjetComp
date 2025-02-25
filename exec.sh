@@ -49,7 +49,7 @@ if [ $DOUBLE = false ]; then
         esac
     done
 fi
-lex main.l && gcc lex.yy.c -o comp.out -ll && DONE=1
+lex main.l && gcc -Werror lex.yy.c -o comp.out -ll && DONE=1
 
 
 
@@ -87,4 +87,7 @@ if [ $DONE -eq 1 ]; then
             cat Tests/exempleminiC.c | ./comp.out
         fi
     fi
+else
+    echo "Erreur de compilation"
+    exit 1
 fi
