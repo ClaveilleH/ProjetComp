@@ -10,43 +10,46 @@ void erreur();
 
 #define TOKEN_EOF       0
 
-#define TOKEN_BREAK     255
-#define TOKEN_CASE      254
-#define TOKEN_DEFAULT   253
-#define TOKEN_ELSE      252
-#define TOKEN_EXTERN    251
-#define TOKEN_FOR       250    
-#define TOKEN_IF        249
-#define TOKEN_INT       248
-#define TOKEN_SWITCH    247
-#define TOKEN_THEN      246   
+#define TOKEN_VAR       235 // IDENTIFICATEUR
+// CONSTANTE
 #define TOKEN_VOID      245
+#define TOKEN_INT       248
+#define TOKEN_FOR       250    
 #define TOKEN_WHILE     244
+#define TOKEN_IF        249
+#define TOKEN_ELSE      252
+#define TOKEN_SWITCH    247
+#define CASE            254
+#define DEFAULT         253
 
-#define TOKEN_SUP_EG    243
-#define TOKEN_INF_EG    242
-#define TOKEN_EGAL      241
-#define TOKEN_DIFF      240
+#define BREAK           255
+#define TOKEN_RETURN    256
+// PLUS
+// MOINS
+// MUL
+// DIV
+#define TOKEN_LSHIFT    236
+#define TOKEN_RSHIFT    237
 #define TOKEN_AND       239
 #define TOKEN_OR        238
-#define TOKEN_SHIFT_D   237
-#define TOKEN_SHIFT_G   236
+// ! LAND LOR BAND BOR ???
 
-#define TOKEN_VAR       235
+#define TOKEN_SUP_EG    243 //GEQ
+#define TOKEN_INF_EG    242 //LEQ
+#define TOKEN_DIFF      240 //NEQ
+// NOT
+#define TOKEN_EXTERN    251
+
+
+#define TOKEN_THEN      246   
+#define TOKEN_EGAL      241
+
 #define TOKEN_NB        234
-
-#define ERROR           fprintf (stderr, "\033[1;31mErreur lexicale\033[0m: [%s] à la ligne %d.\n", yytext, yylineno);
 
 %}
 
 D                       [0-9]
 L                       [a-zA-Z_]
-H                       [a-fA-F0-9]
-E                       [Ee][+-]?{D}+
-FS                      (f|F|l|L)
-IS                      (u|U|l|L)*
-
-
 
 %%
 ">"                     { return '>'; }
@@ -71,9 +74,10 @@ IS                      (u|U|l|L)*
 "]"                     { return ']'; }
 
 
-"break"                 { return TOKEN_BREAK    ;}
-"case"                  { return TOKEN_CASE     ;}
-"default"               { return TOKEN_DEFAULT  ;}
+"break"                 { return BREAK          ;}
+"return"                { return TOKEN_RETURN   ;}
+"case"                  { return CASE           ;}
+"default"               { return DEFAULT        ;}
 "else"                  { return TOKEN_ELSE     ;}
 "extern"                { return TOKEN_EXTERN   ;}
 "for"                   { return TOKEN_FOR      ;}
@@ -90,37 +94,20 @@ IS                      (u|U|l|L)*
 "!="                    { return TOKEN_DIFF     ;}
 "&&"                    { return TOKEN_AND      ;}
 "||"                    { return TOKEN_OR       ;}
-">>"                    { return TOKEN_SHIFT_D  ;}
-"<<"                    { return TOKEN_SHIFT_G  ;}
+">>"                    { return TOKEN_RSHIFT   ;}
+"<<"                    { return TOKEN_LSHIFT   ;}
 
 
 {D}+                    { return TOKEN_NB       ;}       // int
-({L}+({L}|{D})*)        { return TOKEN_VAR      ;} //lettre suivie de naimporte quel combinsaison de lettre et de chiffre  {L}({L}|{D})*           { non_defini(); return -1; } /* A completer */ 
+({L}+({L}|{D})*)        { return TOKEN_VAR      ;} //lettre suivie de nimporte quel combinsaison de lettre et de chiffre  {L}({L}|{D})*           { non_defini(); return -1; } /* A completer */ 
 
 
-0[xX]{H}+{IS}?          { non_defini(); return -1; } /* A completer  un nb haxa + u ou l jsp pk */
-0{D}+{IS}?              { non_defini(); return -1; } /* A completer  la meme qui commence par 0 */
-{D}+{IS}?               { non_defini(); return -1; } /* A completer  un chifre ou nb suivit de u ou l jsp pk */
-L?'(\\.|[^\\'])+'       { non_defini(); return -1; } /* A completer  0 ou une fois L suivit de guillemets et de n'importe quoi */
-
-{D}+{E}{FS}?            { non_defini(); return -1; } /* A completer */   // JSP ce que ca fait
-
-L?\"(\\.|[^\\"])*\"     { non_defini(); return -1; } /* A completer */   // JSP ce que ca fait
-
-"/*".*"*/"              { /* RIEN */} //! commentaires, c'est moi qui l'ai fait a verifier
-[ \t\v\n\f]             { /* RIEN */}
+"//".*                  {/* on ignore les commentaires */}  
+"/*"(.|\n)*"*/"         {/* on ignore les commentaires */}  
+[ \t\v\n\f]             {/* RIEN */}
 
 .                       { erreur(); }
 %%
-// \n      printf("Ligne %d\n", yylineno);
-// " "                     /*rien*/;
-// .*                      {ECHO; printf(">%d<", yylineno);};
-// .                       { return yytext[0]; }
-// [ \t\n] { fprintf (stderr, "erreur lexicale %s à la ligne %d.\n", yytext, yylineno); }
-// {D}*"."{D}+({E})?{FS}?  { non_defini(); return -1; } /* A completer */
-// ({LETTRE}{LETTRE}|{NUM}) return TOKEN_VAR;
-// {D}+"."{D}*({E})?{FS}?  { non_defini(); return -1; } /* A completer */
-
 
 void erreur(){
     fprintf (stderr, "\033[1;31mErreur lexicale\033[0m: [%s] à la ligne %d.\n", yytext, yylineno);
