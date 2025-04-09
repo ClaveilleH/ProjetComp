@@ -4,15 +4,10 @@
 #include <stdlib.h>
 int yylex();
 void yyerror(char *s);
-
-extern int yylineno;
-extern char *yytext;
-extern FILE *yyin;
 %}
 %token IDENTIFICATEUR CONSTANTE VOID INT FOR WHILE IF ELSE SWITCH CASE DEFAULT
 %token BREAK RETURN PLUS MOINS MUL DIV LSHIFT RSHIFT BAND BOR LAND LOR LT GT 
 %token GEQ LEQ EQ NEQ NOT EXTERN
-
 %left PLUS MOINS
 %left MUL DIV
 %left LSHIFT RSHIFT
@@ -29,7 +24,7 @@ programme	:
 	;
 liste_declarations	:	
 		liste_declarations declaration 
-	|	/* epsilon */
+	|	
 	;
 liste_fonctions	:	
 		liste_fonctions fonction
@@ -47,7 +42,7 @@ declarateur	:
 	|	declarateur '[' CONSTANTE ']'
 	;
 fonction	:	
-		type IDENTIFICATEUR '(' liste_parms ')' '{' liste_declarations liste_instructions '}' { printf("fonction \n"); }
+		type IDENTIFICATEUR '(' liste_parms ')' '{' liste_declarations liste_instructions '}'
 	|	EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'
 	;
 type	:	
@@ -55,16 +50,15 @@ type	:
 	|	INT
 	;	
 liste_parms	:	
-		liste_parms ',' parm { printf("liste_params \n"); }
-	|	parm 				 { printf("liste_params \n"); }
-	|	/* epsilon */   	 { printf("liste_params epsilon \n"); }
+		liste_parms ',' parm
+	|	
 	;
 parm:	
-		INT IDENTIFICATEUR 
+		INT IDENTIFICATEUR
 	;
 liste_instructions :	
 		liste_instructions instruction
-	|	/* epsilon */
+	|
 	;
 instruction	:	
 		iteration
@@ -123,11 +117,11 @@ condition	:
 	;
 binary_op	:	
 		PLUS
-	|   MOINS
+	|       MOINS
 	|	MUL
 	|	DIV
-	|   LSHIFT
-	|	RSHIFT
+	|       LSHIFT
+	|       RSHIFT
 	|	BAND
 	|	BOR
 	;
@@ -147,29 +141,11 @@ binary_comp	:
 
 
 void yyerror(char *s) {
-	fprintf(stderr, "%s\n", s);
-	fprintf(stderr, "Error at line %d\n", yylineno);
-	fprintf(stderr, "Error near: %s\n", yytext);
-	exit(1);
+	fprintf(stderr, "-->%s\n", s);
 }
 
 int main(int argc, char **argv) {
-	if (argc > 1) { //! J'ai fais ca comme ca mais a verifier si ca marche bien
-		FILE *f = fopen(argv[1], "r");
-		if (!f) {
-			perror("Error opening file");
-			return 1;
-		}
-		yyin = f;
-	} else {
-		yyin = stdin;
-	}
-	/* printf("Parsing miniC...\n"); */
+	
 	yyparse();
 	return 0;
 }
-
-
-/*
-make && cat exempleminiCModif.c | ./comp.out
-*/

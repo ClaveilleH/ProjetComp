@@ -3,48 +3,15 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-// #include "y.tab.h"
-
+#include "y.tab.h"
+/*%
+liste des token IDENTIFICATEUR CONSTANTE VOID INT FOR WHILE IF ELSE SWITCH CASE DEFAULT
+BREAK RETURN PLUS MOINS MUL DIV LSHIFT RSHIFT BAND BOR LAND LOR LT GT 
+GEQ LEQ EQ NEQ NOT EXTERN*/
 void non_defini();
 void erreur();
 
 #define TOKEN_EOF       0
-
-#define TOKEN_VAR       235 // IDENTIFICATEUR
-// CONSTANTE
-#define TOKEN_VOID      245
-#define TOKEN_INT       248
-#define TOKEN_FOR       250    
-#define TOKEN_WHILE     244
-#define TOKEN_IF        249
-#define TOKEN_ELSE      252
-#define TOKEN_SWITCH    247
-#define CASE            254
-#define DEFAULT         253
-
-#define BREAK           255
-#define TOKEN_RETURN    256
-// PLUS
-// MOINS
-// MUL
-// DIV
-#define TOKEN_LSHIFT    236
-#define TOKEN_RSHIFT    237
-#define TOKEN_AND       239
-#define TOKEN_OR        238
-// ! LAND LOR BAND BOR ???
-
-#define TOKEN_SUP_EG    243 //GEQ
-#define TOKEN_INF_EG    242 //LEQ
-#define TOKEN_DIFF      240 //NEQ
-// NOT
-#define TOKEN_EXTERN    251
-
-
-#define TOKEN_THEN      246   
-#define TOKEN_EGAL      241
-
-#define TOKEN_NB        234
 
 %}
 
@@ -52,54 +19,59 @@ D                       [0-9]
 L                       [a-zA-Z_]
 
 %%
-">"                     { return '>'; }
-"<"                     { return '<'; }
-"!"                     { return '!'; }
-"+"                     { return '+'; }
-"-"                     { return '-'; }
-"*"                     { return '*'; }
-"/"                     { return '/'; }
-"&"                     { return '&'; }
-"|"                     { return '|'; }
-"="                     { return '='; }
-"."                     { return '.'; }
+"["                     { return '['; }
+"]"                     { return ']'; }
+"{"                     { return '{'; }
+"}"                     { return '}'; }
+"("                     { return '('; }
+")"                     { return ')'; }
 ","                     { return ','; }
 ";"                     { return ';'; }
 ":"                     { return ':'; }
-"("                     { return '('; }
-")"                     { return ')'; }
-"{"                     { return '{'; }
-"}"                     { return '}'; }
-"["                     { return '['; }
-"]"                     { return ']'; }
+"="                     { return '='; }
 
 
-"break"                 { return BREAK          ;}
-"return"                { return TOKEN_RETURN   ;}
-"case"                  { return CASE           ;}
-"default"               { return DEFAULT        ;}
-"else"                  { return TOKEN_ELSE     ;}
-"extern"                { return TOKEN_EXTERN   ;}
-"for"                   { return TOKEN_FOR      ;}
-"if"                    { return TOKEN_IF       ;}
-"int"                   { return TOKEN_INT      ;}
-"switch"                { return TOKEN_SWITCH   ;}
-"then"                  { return TOKEN_THEN     ;}
-"void"                  { return TOKEN_VOID     ;}
-"while"                 { return TOKEN_WHILE    ;}
-
-"<="                    { return TOKEN_SUP_EG   ;}
-">="                    { return TOKEN_INF_EG   ;}
-"=="                    { return TOKEN_EGAL     ;}
-"!="                    { return TOKEN_DIFF     ;}
-"&&"                    { return TOKEN_AND      ;}
-"||"                    { return TOKEN_OR       ;}
-">>"                    { return TOKEN_RSHIFT   ;}
-"<<"                    { return TOKEN_LSHIFT   ;}
 
 
-{D}+                    { return TOKEN_NB       ;}       // int
-({L}+({L}|{D})*)        { return TOKEN_VAR      ;} //lettre suivie de nimporte quel combinsaison de lettre et de chiffre  {L}({L}|{D})*           { non_defini(); return -1; } /* A completer */ 
+
+"<"                     { return LT     ; } // le < et le > ne sont pas definis comme ca dans le .y
+">"                     { return GT     ; }
+"+"                     { return PLUS   ; }
+"-"                     { return MOINS  ; }
+"*"                     { return MUL    ; }
+"/"                     { return DIV    ; }
+
+"&"                     { return LAND   ; } // et logique
+"|"                     { return LOR    ; } // ou logique
+"!"                     { return NOT    ; }
+
+
+"break"                 { return BREAK      ;}
+"return"                { return RETURN     ;}
+"case"                  { return CASE       ;}
+"default"               { return DEFAULT    ;}
+"else"                  { return ELSE       ;}
+"extern"                { return EXTERN     ;}
+"for"                   { return FOR        ;}
+"if"                    { return IF         ;}
+"int"                   { return INT        ;}
+"switch"                { return SWITCH     ;}
+"then"                  { return THEN       ;}
+"void"                  { return VOID       ;}
+"while"                 { return WHILE      ;}
+
+"<="                    { return LEQ        ;}
+">="                    { return GEQ        ;}
+"=="                    { return EQ         ;}
+"!="                    { return NEQ        ;}
+"&&"                    { return BAND       ;} // et binaire
+"||"                    { return BOR        ;} // ou binaire
+">>"                    { return RSHIFT     ;}
+"<<"                    { return LSHIFT     ;}
+
+
+{D}+                    { return CONSTANTE           ;}       // int
+{L}+({L}|{D})*          { return IDENTIFICATEUR      ;} //lettre suivie de nimporte quel combinsaison de lettre et de chiffre  {L}({L}|{D})*           { non_defini(); return -1; } /* A completer */ 
 
 
 "//".*                  {/* on ignore les commentaires */}  
@@ -121,18 +93,35 @@ void non_defini(){
     
 }
 
-int main(){
-    int token_courant = yylex();
-    printf("Codes des tokens retournés par yylex: ");
+// int main(){
+//     int token_courant = yylex();
+//     printf("Codes des tokens retournés par yylex: ");
 
-    do {
-        printf("%d ", token_courant);
-        token_courant = yylex();
-    } while (token_courant != TOKEN_EOF);
+//     do {
+//         printf("%d ", token_courant);
+//         token_courant = yylex();
+//     } while (token_courant != TOKEN_EOF);
 
-    printf("\n");
-    return 0;
-}
+//     printf("\n");
+//     return 0;
+// }
+
+
+/*
+
+
+"<"                     { return LT     ;} // le < et le > ne sont pas definis comme ca dans le .y
+">"                     { return GT     ;}
+
+
+
+"."                     { return '.'; }
+
+PAS SUR DE SON UTILITE
+
+
+*/
+
 
 /*
 lex main.l && gcc lex.yy.c -ll && cat fichiersProf/exempleminiC.c | ./a.out
