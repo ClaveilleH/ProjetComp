@@ -1,0 +1,63 @@
+digraph mon_programme {
+    // Ceci est un commentaire
+    node_mainFunc [label="main, int" shape=invtrapezium color=blue];
+
+    node_bloc [label="BLOC" shape=ellipse];
+        node_mainFunc -> node_bloc;
+
+        node_for [label="FOR" shape=ellipse];
+        node_bloc -> node_for;
+
+            node_forAssign1 [label=":="];
+            node_for -> node_forAssign1;
+                node_forAssign1I [label="i"];
+                node_forAssign1 -> node_forAssign1I;
+                node_forAssign10 [label="0"];
+                node_forAssign1 -> node_forAssign10;
+
+            node_forCondition [label="<"];
+            node_for -> node_forCondition;
+                node_forConditionI [label="i"];
+                node_forCondition -> node_forConditionI;
+                node_forCondition10 [label="10"];
+                node_forCondition -> node_forCondition10;
+
+            node_forIncrement [label=":="];
+            node_for -> node_forIncrement;
+                node_forIncrementI [label="i"];
+                node_forIncrement -> node_forIncrementI;
+                node_forIncrementPlus [label="+"];
+                node_forIncrement -> node_forIncrementPlus;
+                    node_forIncrementPlusI [label="i"];
+                    node_forIncrementPlus -> node_forIncrementPlusI;
+                    node_forIncrementPlus1 [label="1"];
+                    node_forIncrementPlus -> node_forIncrementPlus1;
+
+            node_forIf [label="IF" shape=diamond];
+            node_for -> node_forIf;
+                node_forIfCondition [label="=="];
+                node_forIf -> node_forIfCondition;
+                    node_forIfConditionI [label="i"];
+                    node_forIfCondition -> node_forIfConditionI;
+                    node_forIfCondition5 [label="5"];
+                    node_forIfCondition -> node_forIfCondition5; 
+                    
+                node_forIfBreak [label="BREAK" shape=box];
+                node_forIf -> node_forIfBreak;
+
+        node_printd [label="printd" shape=polygon sides=7];
+        node_bloc -> node_printd;
+            node_printdI [label="i"];
+            node_printd -> node_printdI;
+
+        node_return [label="RETURN" shape=trapezium color=blue];
+        node_bloc -> node_return;
+            node_returnPlus [label="+"];
+            node_return -> node_returnPlus;
+                node_returnPlusI [label="i"];
+                node_returnPlus -> node_returnPlusI;
+                node_returnPlus3 [label="3"];
+                node_returnPlus -> node_returnPlus3;
+
+}
+
