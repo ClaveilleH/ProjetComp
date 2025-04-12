@@ -47,7 +47,7 @@ declarateur	:
 	|	declarateur '[' CONSTANTE ']'
 	;
 fonction	:	
-		type IDENTIFICATEUR '(' liste_parms ')' '{' liste_declarations liste_instructions '}' { printf("fonction \n"); }
+		type IDENTIFICATEUR '(' liste_parms ')' '{' liste_declarations liste_instructions '}' //{ printf("fonction \n"); }
 	|	EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'
 	;
 type	:	
@@ -55,9 +55,9 @@ type	:
 	|	INT
 	;	
 liste_parms	:	
-		liste_parms ',' parm { printf("liste_params \n"); }
-	|	parm 				 { printf("liste_params \n"); }
-	|	/* epsilon */   	 { printf("liste_params epsilon \n"); }
+		liste_parms ',' parm //{ printf("liste_params \n"); }
+	|	parm 				 //{ printf("liste_params \n"); } // ajouté pour le cas d'un seul paramètre
+	|	/* epsilon */   	 //{ printf("liste_params epsilon \n"); }
 	;
 parm:	
 		INT IDENTIFICATEUR 
@@ -113,6 +113,7 @@ expression	:
 	;
 liste_expressions	:	
 		liste_expressions ',' expression
+	|	expression /* ajouté pour le cas d'une seule expression */
 	|
 	;
 condition	:	
