@@ -155,7 +155,7 @@ void yyerror(char *s) {
 }
 
 int main(int argc, char **argv) {
-	if (argc > 1) { //! J'ai fais ca comme ca mais a verifier si ca marche bien
+	if (argc > 1) { //! J'ai fais ca comme ca mais a verifier si ca marche bien, c'est pour executer sur le fichier passé en parametre
 		FILE *f = fopen(argv[1], "r");
 		if (!f) {
 			perror("Error opening file");
@@ -172,5 +172,5 @@ int main(int argc, char **argv) {
 
 
 /*
-make && cat exempleminiCModif.c | ./comp.out
+make && ./comp.out Tests/exempleminiC.c
 */
