@@ -4,12 +4,26 @@
 #include <stdlib.h>
 int yylex();
 void yyerror(char *s);
+void yylex_destroy();
+FILE *file ;
+
+
 
 extern int yylineno;
 extern char *yytext;
 extern FILE *yyin;
 %}
-%token IDENTIFICATEUR CONSTANTE VOID INT FOR WHILE IF ELSE SWITCH CASE DEFAULT
+
+%union {
+	int entier;
+	char *chaine;
+}
+
+%token <entier> CONSTANTE
+%token <chaine> IDENTIFICATEUR
+
+
+%token VOID INT FOR WHILE IF ELSE SWITCH CASE DEFAULT
 %token BREAK RETURN PLUS MOINS MUL DIV LSHIFT RSHIFT BAND BOR LAND LOR LT GT 
 %token GEQ LEQ EQ NEQ NOT EXTERN
 
@@ -25,7 +39,10 @@ extern FILE *yyin;
 %start programme
 %%
 programme	:	
-		liste_declarations liste_fonctions
+		liste_declarations liste_fonctions { 
+			fprintf(file, "digraph mon_programme {\n");
+			// fprintf(file, liste_declarations.CODE);
+			fprintf(file, "}\n"); } 
 	;
 liste_declarations	:	
 		liste_declarations declaration 
@@ -43,8 +60,8 @@ liste_declarateurs	:
 	|	declarateur
 	;
 declarateur	:	
-		IDENTIFICATEUR
-	|	declarateur '[' CONSTANTE ']'
+		IDENTIFICATEUR					{printf("%s\n", $1);}
+	|	declarateur '[' CONSTANTE ']' 	{printf("%d\n", $3);}
 	;
 fonction	:	
 		type IDENTIFICATEUR '(' liste_parms ')' '{' liste_declarations liste_instructions '}' //{ printf("fonction \n"); }
@@ -161,12 +178,25 @@ int main(int argc, char **argv) {
 			perror("Error opening file");
 			return 1;
 		}
+		printf("Parsing miniC...\n");
+		file = fopen("output.dot", "w");
+		if (!file) {
+			perror("Error opening output file");
+			fclose(f);
+			return 1;
+		}
+		fflush(file);
 		yyin = f;
+		yyparse();
+		fclose(f);
+		fclose(file);
 	} else {
 		yyin = stdin;
+		yyparse();
 	}
 	/* printf("Parsing miniC...\n"); */
-	yyparse();
+	/* yyparse(); */
+	yylex_destroy(); // liberer la mémoire allouée par lex
 	return 0;
 }
 

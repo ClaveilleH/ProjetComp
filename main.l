@@ -70,8 +70,8 @@ L                       [a-zA-Z_]
 "<<"                    { return LSHIFT     ;}
 
 
-{D}+                    { return CONSTANTE           ;}       // int
-{L}+({L}|{D})*          { return IDENTIFICATEUR      ;} //lettre suivie de nimporte quel combinsaison de lettre et de chiffre  {L}({L}|{D})*           { non_defini(); return -1; } /* A completer */ 
+{D}+                    { yylval.entier = 0;  return CONSTANTE           ;}       // int
+{L}+({L}|{D})*          { yylval.chaine = "aa"; return IDENTIFICATEUR      ;} //lettre suivie de nimporte quel combinsaison de lettre et de chiffre  {L}({L}|{D})*           { non_defini(); return -1; } /* A completer */ 
 
 
 "//".*                  {/* on ignore les commentaires */}  
