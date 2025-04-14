@@ -71,7 +71,7 @@ L                       [a-zA-Z_]
 
 
 {D}+                    { yylval.entier = 0;  return CONSTANTE           ;}       // int
-{L}+({L}|{D})*          { yylval.chaine = "aa"; return IDENTIFICATEUR      ;} //lettre suivie de nimporte quel combinsaison de lettre et de chiffre  {L}({L}|{D})*           { non_defini(); return -1; } /* A completer */ 
+{L}+({L}|{D})*          { yylval.chaine = strdup(yytext) ; return IDENTIFICATEUR      ;} //lettre suivie de nimporte quel combinsaison de lettre et de chiffre  {L}({L}|{D})*           { non_defini(); return -1; } /* A completer */ 
 
 
 "//".*                  {/* on ignore les commentaires */}  

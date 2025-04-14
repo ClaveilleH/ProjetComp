@@ -42,8 +42,11 @@ digraph mon_programme {
                     node_forIfCondition5 [label="5"];
                     node_forIfCondition -> node_forIfCondition5; 
                     
-                node_forIfBreak [label="BREAK" shape=box];
-                node_forIf -> node_forIfBreak;
+                node_forIfThen [label="Then" ]
+                node_forIf -> node_forIfThen;
+                    
+                    node_forIfBreak [label="BREAK" shape=box];
+                    node_forIfThen -> node_forIfBreak;
 
         node_printd [label="printd" shape=polygon sides=7];
         node_bloc -> node_printd;
