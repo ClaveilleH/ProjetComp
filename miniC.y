@@ -24,7 +24,8 @@ extern FILE *yyin;
 	int entier;
 	char *chaine;
 	char *code;
-	struct _var *variable;
+	struct _variable *variable;
+	struct _variable **varTable;
 }
 /* %define YYSTYPE code */ // pas compatible avec yacc (que bison)
 /* %type <code> declarateur liste_declarations declaration type liste_declarateurs */
@@ -32,7 +33,8 @@ extern FILE *yyin;
 /* %type <code> declaration type liste_declarations
 %type <code> fonction liste_fonctions
 %type <code> variable */
-%type <variable> declarateur liste_declarateurs
+%type <variable> declarateur liste_declarateurs declaration 
+%type <varTable> liste_declarations
 
 
 %token <entier> CONSTANTE
@@ -60,28 +62,55 @@ programme	:
 		liste_declarations liste_fonctions 
 	;
 liste_declarations	:	
-		liste_declarations declaration 	
-	|	/* epsilon */					
+		liste_declarations declaration 	{
+			/*on fusione la liste chainée avec la hashtable*/
+			$$ = $1;
+			variable *temp = $2;
+			variable *prev = NULL;
+			while (temp != NULL) {
+				int h = hash(temp->varName);
+				if ($$[h] == NULL) {
+					$$[h] = temp;
+				} else {
+					variable *temp2 = $$[h];
+					if (strcmp(temp2->varName, temp->varName) == 0) { // si la variable est déjà déclarée
+						yyerror("Variable already declared in the same scope");
+					}
+					append_variable(temp2, temp);
+					temp2->nextVar = temp;
+				}
+				prev = temp;
+				temp = temp->nextVar;
+				prev->nextVar = NULL; // on coupe la liste pour ne pas la relier à la fin
+			}
+			// print_var_table($$);
+
+		}
+	|	/* epsilon */ { $$ = new_varTable(); }
 	;
 liste_fonctions	:	
 		liste_fonctions fonction
 	|   fonction
 	;
 declaration	:	
-		type liste_declarateurs ';' 
+		type liste_declarateurs ';' {
+			$$ = $2;
+		}
 	;
 liste_declarateurs	:	
 		liste_declarateurs ',' declarateur 	{
+			/*on ajoute declarateur a la fin de la liste de declarateurs*/
 			$$ = $1;
-			var *temp = $1;
+			variable *temp = $1;
 			while (temp->nextVar != NULL) {
+				if (strcmp(temp->varName, $3->varName) == 0) { // si la variable est déjà déclarée
+					yyerror("Variable already declared in the same scope");
+				}
 				temp = temp->nextVar;
 			}
 			temp->nextVar = $3;
-			// $$ = $3;
-			// $$->nextVar = $1;
-			/*on ajoute declarateur a la fin de la liste de declarateurs*/
 			temp = $$;
+
 			printf("[");
 			while (temp->nextVar != NULL) {
 				printf("%s, ", temp->varName);
@@ -90,14 +119,15 @@ liste_declarateurs	:
 			printf("%s]\n", temp->varName);
 		}
 	|	declarateur {
-		$$ = $1;
+		$$ = new_variable();
+		$$->varName = strdup($1->varName);
 		printf("[$$ = %s]\n", $1->varName);
 		
 		}
 	;
 declarateur	:	
 		IDENTIFICATEUR {
-			$$ = malloc(sizeof(var));
+			$$ = malloc(sizeof(variable));
 			if ($$ == NULL) {
 				fprintf(stderr, "Erreur d'allocation mémoire\n");
 				exit(1);
@@ -162,7 +192,7 @@ appel	:
 	;
 variable	:	
 		IDENTIFICATEUR
-	|	variable '[' expression ']' //! On est censé pouvoir faire des tableaux de tableaux
+	|	variable '[' expression ']'
 	;
 expression	:	
 		'(' expression ')'
@@ -170,7 +200,7 @@ expression	:
 	|	MOINS expression
 	|	CONSTANTE
 	|	variable
-	|	IDENTIFICATEUR '(' liste_expressions ')'
+	|	IDENTIFICATEUR '(' liste_expressions ')' // ?? c'est un appel de fonction ?
 	;
 liste_expressions	:	
 		liste_expressions ',' expression
@@ -246,12 +276,12 @@ int main(int argc, char **argv) {
 		fflush(file);
 		yyin = f;
 
-		reset_tables();
+		/* reset_tables(); */
 
 
 		yyparse();
-		print_var_table();
-		print_function_table();
+		/* print_var_table(); */
+		/* print_function_table(); */
 
 		fclose(f);
 		fclose(file);

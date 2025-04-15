@@ -3,6 +3,7 @@ fichier utilisé pour tout tester
 */
 
 int ab, a, b, c; // déclaration de variables globales
+//int a; // leve l'erreur de compilation -> variable déjà déclarée
 // int ab; // leve l'erreur de compilation -> variable déjà déclarée
 int ac;
 
@@ -13,9 +14,9 @@ void main(){
 }
 
 
-int foo() {
-    int b;
-}
+// int foo() {
+//     int b;
+// }
 
 
 
@@ -25,6 +26,6 @@ int foo() {
 
 
 
-//pas de return dans une fonction -> erreur ?
 
-// ca fait une erreur de compilation PAS NORMAL
+//pas de return dans une fonction -> erreur ?
+// les commentaires etoilés une erreur de compilation PAS NORMAL

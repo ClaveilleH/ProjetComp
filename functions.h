@@ -10,31 +10,40 @@
 // } type;
 
 // une variable a qu'un type possible
-typedef struct _var {
+typedef struct _variable {
     char *varName;
-    struct _var *nextVar;
+    struct _variable *nextVar;
     
-} var;
+} variable;
 
 typedef struct _function {
     char *varName;
     // type funcType;
     char *funcType;
-    var *varList[TAILLE]; // liste des variables locales
+    variable *varList[TAILLE]; // liste des variables locales
     struct _function *nextFunc;
 } function;
 
-var *new_varlist(void);
-var *new_var(void);
+int hash(char *nom);
 
-function *insert_function(const char *name, char *funcType);
-var *insert_var(const char *name);
-void reset_tables(void);
-int var_exists(const char *name);
-int function_exists(const char *name);
 
-void print_var_table();
-void print_function_table();
+variable *new_variable(void);
+int append_variable(variable *var1, variable *var2);
+
+variable **new_varTable(void);
+int add_var(variable *table, variable *var);
+
+void print_var_list(variable *var);
+void print_var_table(variable **table);
+
+
+// function *insert_function(const char *name, char *funcType);
+// var *insert_var(const char *name);
+// void reset_tables(void);
+// int var_exists(const char *name);
+// int function_exists(const char *name);
+
+// void print_function_table();
     
 
 
