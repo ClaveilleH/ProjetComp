@@ -16,10 +16,11 @@ void main(){
 
 int foo() {
     int b;
+    a = 0;
 }
+// int a(){}
 
-// foo();
-
+/**/
 // int main() { // leve l'erreur de compilation
 
 // }
@@ -28,4 +29,5 @@ int foo() {
 
 
 //pas de return dans une fonction -> erreur ?
-// les commentaires etoilés une erreur de compilation PAS NORMAL
+//  les commentaires etoilés une erreur de compilation PAS NORMAL
+//  gerer les commentaires non fermés

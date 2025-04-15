@@ -80,11 +80,14 @@ L                       [a-zA-Z_]
 
 
 "//".*                  {/* on ignore les commentaires */}  
-"/*"(.|\n)*"*/"         {/* on ignore les commentaires */}  
+"/*"(.|\n)*"*/"         {/* on ignore les commentaires */ printf("commentaire multi ligne %s\n", yytext); }  
 [ \t\v\n\f]             {/* RIEN */}
 
 .                       { erreur(); }
 %%
+
+//  "/*"(.|\n)*"*/" 
+//  "/*"(.|\n)*"*/"
 
 void erreur(){
     fprintf (stderr, "\033[1;31mErreur lexicale\033[0m: [%s] à la ligne %d.\n", yytext, yylineno);

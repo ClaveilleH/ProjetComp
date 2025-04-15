@@ -19,6 +19,7 @@ extern int yylineno;
 extern char *yytext;
 extern FILE *yyin;
 %}
+%debug
 
 %union {
 	int entier;
@@ -28,14 +29,6 @@ extern FILE *yyin;
 	struct _variable **varTable;
 }
 /* %define YYSTYPE code */ // pas compatible avec yacc (que bison)
-/* %type <code> declarateur liste_declarations declaration type liste_declarateurs */
-
-/* %type <code> declaration type liste_declarations
-%type <code> fonction liste_fonctions
-%type <code> variable */
-%type <variable> declarateur liste_declarateurs declaration 
-%type <varTable> liste_declarations
-
 
 %token <entier> CONSTANTE
 %token <chaine> IDENTIFICATEUR
@@ -62,88 +55,31 @@ programme	:
 		liste_declarations liste_fonctions 
 	;
 liste_declarations	:	
-		liste_declarations declaration 	{
-			/*on fusione la liste chainée avec la hashtable*/
-			$$ = $1;
-			variable *temp = $2;
-			variable *prev = NULL;
-			while (temp != NULL) {
-				int h = hash(temp->varName);
-				if ($$[h] == NULL) {
-					$$[h] = temp;
-				} else {
-					variable *temp2 = $$[h];
-					if (strcmp(temp2->varName, temp->varName) == 0) { // si la variable est déjà déclarée
-						yyerror("Variable already declared in the same scope");
-					}
-					append_variable(temp2, temp);
-					temp2->nextVar = temp;
-				}
-				prev = temp;
-				temp = temp->nextVar;
-				prev->nextVar = NULL; // on coupe la liste pour ne pas la relier à la fin
-			}
-			// print_var_table($$);
-
-		}
-	|	/* epsilon */ { $$ = new_varTable(); }
+		liste_declarations declaration 	{printf("----declaration\n");}
+	|	/* epsilon */ 					{printf("----epsilon\n");}
 	;
 liste_fonctions	:	
 		liste_fonctions fonction
 	|   fonction
 	;
 declaration	:	
-		type liste_declarateurs ';' {
-			$$ = $2;
-		}
+		type liste_declarateurs ';' //{printf("declaration ");}
 	;
 liste_declarateurs	:	
-		liste_declarateurs ',' declarateur 	{
-			/*on ajoute declarateur a la fin de la liste de declarateurs*/
-			$$ = $1;
-			variable *temp = $1;
-			while (temp->nextVar != NULL) {
-				if (strcmp(temp->varName, $3->varName) == 0) { // si la variable est déjà déclarée
-					yyerror("Variable already declared in the same scope");
-				}
-				temp = temp->nextVar;
-			}
-			temp->nextVar = $3;
-			temp = $$;
-
-			// printf("[");
-			// while (temp->nextVar != NULL) {
-			// 	printf("%s, ", temp->varName);
-			// 	temp = temp->nextVar;
-			// }
-			// printf("%s]\n", temp->varName);
-		}
-	|	declarateur {
-		$$ = new_variable();
-		$$->varName = strdup($1->varName);
-		// printf("[$$ = %s]\n", $1->varName);
-		
-		}
+		liste_declarateurs ',' declarateur 	
+	|	declarateur 
 	;
 declarateur	:	
-		IDENTIFICATEUR {
-			$$ = malloc(sizeof(variable));
-			if ($$ == NULL) {
-				fprintf(stderr, "Erreur d'allocation mémoire\n");
-				exit(1);
-			}
-			$$->varName = strdup($1);
-			$$->nextVar = NULL;
-		}
-	|	declarateur '[' CONSTANTE ']'
+		IDENTIFICATEUR {printf("declarateur : %s\n", $1);}
+	|	declarateur '[' CONSTANTE ']' {printf("declarateur : %d\n", $3);}
 	;
 fonction	:	
-		type IDENTIFICATEUR '(' liste_parms ')' '{' liste_declarations liste_instructions '}' 
-	|	EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'	
+		type IDENTIFICATEUR '(' liste_parms ')' '{' liste_declarations liste_instructions '}' {printf("fonction : %s\n", $2);}
+	|	EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'	{printf("fonction : %s\n", $3);}
 	;
 type	:	
-		VOID
-	|	INT
+		VOID	{printf("void\n");}
+	|	INT	{printf("int\n");}	
 	;	
 liste_parms	:	
 		liste_parms ',' parm
@@ -151,7 +87,7 @@ liste_parms	:
 	|	/* epsilon */
 	;
 parm:	
-		INT IDENTIFICATEUR {printf("4->%s\n", $2);}
+		INT IDENTIFICATEUR	{printf("parm : %s\n", $2);}
 	;
 liste_instructions :	
 		liste_instructions instruction
@@ -188,10 +124,10 @@ bloc	:
 		'{' liste_declarations liste_instructions '}'
 	;
 appel	:	
-		IDENTIFICATEUR '(' liste_expressions ')' ';' {printf("appel de fonction : %s\n", $1);}
+		IDENTIFICATEUR '(' liste_expressions ')' ';' 	{printf("appel : %s\n", $1);}
 	;
 variable	:	
-		IDENTIFICATEUR	{printf("5->%s\n", $1);}
+		IDENTIFICATEUR		{printf("variable : %s\n", $1);}
 	|	variable '[' expression ']'
 	;
 expression	:	
@@ -200,12 +136,12 @@ expression	:
 	|	MOINS expression
 	|	CONSTANTE
 	|	variable
-	|	IDENTIFICATEUR '(' liste_expressions ')' { printf("6->%s\n", $1); } // ?? c'est un appel de fonction ? 
+	|	IDENTIFICATEUR '(' liste_expressions ')' 	{printf("expr : %s",$1);}  // ?? c'est un appel de fonction ? 
 	;
 liste_expressions	:	
-		liste_expressions ',' expression	{printf("1\n");}
-	|	expression /* ajouté pour le cas d'une seule expression */ {printf("2\n");}
-	|	/* epsilon */			{printf("3\n");}
+		liste_expressions ',' expression	
+	|	expression /* ajouté pour le cas d'une seule expression */ 
+	|	/* epsilon */			
 	;
 condition	:	
 		NOT '(' condition ')'
@@ -261,6 +197,8 @@ void error(char *s) {
 }
 
 int main(int argc, char **argv) {
+	extern int yydebug;
+	yydebug = 0; // activer le mode debug de bison
 	if (argc > 1) { //! J'ai fais ca comme ca mais a verifier si ca marche bien, c'est pour executer sur le fichier passé en parametre
 		FILE *f = fopen(argv[1], "r");
 		if (!f) {
