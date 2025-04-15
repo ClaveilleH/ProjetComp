@@ -6,8 +6,12 @@
 
 #include "functions.h"
 
+#define COLOR_RED "\033[31m"
+#define RESET_COLOR "\033[0m"
+
 int yylex();
 void yyerror(char *s);
+void error(char *s);
 void yylex_destroy();
 FILE *file ;
 
@@ -20,11 +24,15 @@ extern FILE *yyin;
 	int entier;
 	char *chaine;
 	char *code;
+	struct _var *variable;
 }
 /* %define YYSTYPE code */ // pas compatible avec yacc (que bison)
-%type <code> declarateur liste_declarations declaration type liste_declarateurs
-%type <code> fonction liste_fonctions
+/* %type <code> declarateur liste_declarations declaration type liste_declarateurs */
 
+/* %type <code> declaration type liste_declarations
+%type <code> fonction liste_fonctions
+%type <code> variable */
+%type <variable> declarateur liste_declarateurs
 
 
 %token <entier> CONSTANTE
@@ -49,71 +57,75 @@ extern FILE *yyin;
 %start programme
 %%
 programme	:	
-		liste_declarations liste_fonctions { 
-			fprintf(file, "digraph mon_programme {\n");
-			// fprintf(file, "%s", $1);
-			fprintf(file, "\n");
-			fprintf(file, "%s", $2);
-			// fprintf(file, liste_declarations.CODE);
-			// printf("liste_declarations : %s\n", $1);
-			// printf("liste_fonctions : %s\n", $2);
-			fprintf(file, "\n}"); } 
+		liste_declarations liste_fonctions 
 	;
 liste_declarations	:	
-		liste_declarations declaration 	{printf("lst:%s|%s\n", $1, $2); $$ = concat($1, $2);}
-	|	/* epsilon */					{ $$ = ""; }
+		liste_declarations declaration 	
+	|	/* epsilon */					
 	;
 liste_fonctions	:	
-		liste_fonctions fonction 		{/*printf("lst:%s|%s\n", $1, $2);*/ $$ = concat($1, $2);}
-	|   fonction						{/*printf("lst:%s|%s\n", $1, $2);*/ $$ = $1;}
+		liste_fonctions fonction
+	|   fonction
 	;
 declaration	:	
-		type liste_declarateurs ';' {
-			$$ = concat3($1, " ", $2);
-		}
+		type liste_declarateurs ';' 
 	;
 liste_declarateurs	:	
-		liste_declarateurs ',' declarateur 	{ 
-			$$ = concat("decl_", get_random_name());
-			$$ = concat3($$, ", ", $3);
-			printf("L->|%s|\n", $$);
-		}
-	|	declarateur { 
+		liste_declarateurs ',' declarateur 	{
 			$$ = $1;
+			var *temp = $1;
+			while (temp->nextVar != NULL) {
+				temp = temp->nextVar;
+			}
+			temp->nextVar = $3;
+			// $$ = $3;
+			// $$->nextVar = $1;
+			/*on ajoute declarateur a la fin de la liste de declarateurs*/
+			temp = $$;
+			printf("[");
+			while (temp->nextVar != NULL) {
+				printf("%s, ", temp->varName);
+				temp = temp->nextVar;
+			}
+			printf("%s]\n", temp->varName);
+		}
+	|	declarateur {
+		$$ = $1;
+		printf("[$$ = %s]\n", $1->varName);
+		
 		}
 	;
 declarateur	:	
-		IDENTIFICATEUR					{$$ = $1;}
-	|	declarateur '[' CONSTANTE ']' 	{printf("C->|%d|\n", $3);}
+		IDENTIFICATEUR {
+			$$ = malloc(sizeof(var));
+			if ($$ == NULL) {
+				fprintf(stderr, "Erreur d'allocation mémoire\n");
+				exit(1);
+			}
+			$$->varName = strdup($1);
+			$$->nextVar = NULL;
+		}
+	|	declarateur '[' CONSTANTE ']'
 	;
 fonction	:	
-		type IDENTIFICATEUR '(' liste_parms ')' '{' liste_declarations liste_instructions '}' { 
-			char *str = concat("func_", get_random_name());
-			str = concat(str, " [label=\""); 
-			str = concat(str, $2);
-			str = concat(str, ", ");
-			str = concat(str, $1);
-			str = concat(str, "\" shape=invtrapezium color=blue];\n");
-
-			$$ = str; 
-			}
-	|	EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'	{ printf("fonction externe \n"); $$ = "fonction externe"; }
+		type IDENTIFICATEUR '(' liste_parms ')' '{' liste_declarations liste_instructions '}' 
+	|	EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'	
 	;
 type	:	
-		VOID { $$ = "void"; }
-	|	INT  { $$ = "int"; }
+		VOID
+	|	INT
 	;	
 liste_parms	:	
-		liste_parms ',' parm //{ printf("liste_params \n"); }
-	|	parm 				 //{ printf("liste_params \n"); } // ajouté pour le cas d'un seul paramètre
-	|	/* epsilon */   	 //{ $$ = ""; }
+		liste_parms ',' parm
+	|	parm
+	|	/* epsilon */
 	;
 parm:	
-		INT IDENTIFICATEUR 		{ printf("paramètre : %s\n", $2); }
+		INT IDENTIFICATEUR
 	;
 liste_instructions :	
 		liste_instructions instruction
-	|	/* epsilon */		//{ $$ = ""; }
+	|	/* epsilon */
 	;
 instruction	:	
 		iteration
@@ -146,11 +158,11 @@ bloc	:
 		'{' liste_declarations liste_instructions '}'
 	;
 appel	:	
-		IDENTIFICATEUR '(' liste_expressions ')' ';' { printf("appel de fonction : %s\n", $1); }
+		IDENTIFICATEUR '(' liste_expressions ')' ';'
 	;
 variable	:	
-		IDENTIFICATEUR		{ printf("variable : %s\n", $1); }	
-	|	variable '[' expression ']'
+		IDENTIFICATEUR
+	|	variable '[' expression ']' //! On est censé pouvoir faire des tableaux de tableaux
 	;
 expression	:	
 		'(' expression ')'
@@ -158,7 +170,7 @@ expression	:
 	|	MOINS expression
 	|	CONSTANTE
 	|	variable
-	|	IDENTIFICATEUR '(' liste_expressions ')'	{ printf("appel de fonction : %s\n", $1); }
+	|	IDENTIFICATEUR '(' liste_expressions ')'
 	;
 liste_expressions	:	
 		liste_expressions ',' expression
@@ -197,9 +209,24 @@ binary_comp	:
 
 
 void yyerror(char *s) {
+	fprintf(stderr, COLOR_RED);
+	fprintf(stderr, "Error: ");
+	fprintf(stderr, RESET_COLOR);
 	fprintf(stderr, "%s\n", s);
 	fprintf(stderr, "Error at line %d\n", yylineno);
 	fprintf(stderr, "Error near: %s\n", yytext);
+	exit(1);
+}
+
+void error(char *s) {
+	/*comme yyerror mais avec un free*/
+	fprintf(stderr, COLOR_RED);
+	fprintf(stderr, "Error: ");
+	fprintf(stderr, RESET_COLOR);
+	fprintf(stderr, "%s\n", s);
+	fprintf(stderr, "Error at line %d\n", yylineno);
+	fprintf(stderr, "Error near: %s\n", yytext);
+	free(s);
 	exit(1);
 }
 
@@ -218,7 +245,14 @@ int main(int argc, char **argv) {
 		}
 		fflush(file);
 		yyin = f;
+
+		reset_tables();
+
+
 		yyparse();
+		print_var_table();
+		print_function_table();
+
 		fclose(f);
 		fclose(file);
 	} else {

@@ -70,7 +70,12 @@ L                       [a-zA-Z_]
 "<<"                    { return LSHIFT     ;}
 
 
-{D}+                    { yylval.entier = 0;  return CONSTANTE           ;}       // int
+{D}+                    { 
+    // yylval.entier = 0;
+    // fprintf(yylval.entier, "%s", yytext);
+    /* en fait on s'en fout de la valeur nan ??*/
+    return CONSTANTE;
+    }       // int
 {L}+({L}|{D})*          { yylval.chaine = strdup(yytext) ; return IDENTIFICATEUR      ;} //lettre suivie de nimporte quel combinsaison de lettre et de chiffre  {L}({L}|{D})*           { non_defini(); return -1; } /* A completer */ 
 
 
