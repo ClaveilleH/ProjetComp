@@ -8,8 +8,8 @@
 
 
 int compteur = 0;
-// var *varTable[TAILLE];
-// function *functionTable[TAILLE];
+// var **varTable[TAILLE];
+function **functionTable[TAILLE]; //un seul niveau de declaration possible
 
 int hash(char *nom) {
     int h = 0;

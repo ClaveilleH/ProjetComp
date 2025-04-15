@@ -9,7 +9,7 @@
 //     TYPE_VOID
 // } type;
 
-// une variable a qu'un type possible
+// une variable n'a qu'un type possible
 typedef struct _variable {
     char *varName;
     struct _variable *nextVar;
@@ -20,7 +20,7 @@ typedef struct _function {
     char *varName;
     // type funcType;
     char *funcType;
-    variable *varList[TAILLE]; // liste des variables locales
+    variable **varTable; // liste des variables locales
     struct _function *nextFunc;
 } function;
 

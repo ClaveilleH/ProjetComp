@@ -14,11 +14,11 @@ void main(){
 }
 
 
-// int foo() {
-//     int b;
-// }
+int foo() {
+    int b;
+}
 
-
+// foo();
 
 // int main() { // leve l'erreur de compilation
 

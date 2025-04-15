@@ -111,17 +111,17 @@ liste_declarateurs	:
 			temp->nextVar = $3;
 			temp = $$;
 
-			printf("[");
-			while (temp->nextVar != NULL) {
-				printf("%s, ", temp->varName);
-				temp = temp->nextVar;
-			}
-			printf("%s]\n", temp->varName);
+			// printf("[");
+			// while (temp->nextVar != NULL) {
+			// 	printf("%s, ", temp->varName);
+			// 	temp = temp->nextVar;
+			// }
+			// printf("%s]\n", temp->varName);
 		}
 	|	declarateur {
 		$$ = new_variable();
 		$$->varName = strdup($1->varName);
-		printf("[$$ = %s]\n", $1->varName);
+		// printf("[$$ = %s]\n", $1->varName);
 		
 		}
 	;
@@ -151,11 +151,11 @@ liste_parms	:
 	|	/* epsilon */
 	;
 parm:	
-		INT IDENTIFICATEUR
+		INT IDENTIFICATEUR {printf("4->%s\n", $2);}
 	;
 liste_instructions :	
 		liste_instructions instruction
-	|	/* epsilon */
+	|	/* epsilon *///{ $$ = ""; }
 	;
 instruction	:	
 		iteration
@@ -188,10 +188,10 @@ bloc	:
 		'{' liste_declarations liste_instructions '}'
 	;
 appel	:	
-		IDENTIFICATEUR '(' liste_expressions ')' ';'
+		IDENTIFICATEUR '(' liste_expressions ')' ';' {printf("appel de fonction : %s\n", $1);}
 	;
 variable	:	
-		IDENTIFICATEUR
+		IDENTIFICATEUR	{printf("5->%s\n", $1);}
 	|	variable '[' expression ']'
 	;
 expression	:	
@@ -200,12 +200,12 @@ expression	:
 	|	MOINS expression
 	|	CONSTANTE
 	|	variable
-	|	IDENTIFICATEUR '(' liste_expressions ')' // ?? c'est un appel de fonction ?
+	|	IDENTIFICATEUR '(' liste_expressions ')' { printf("6->%s\n", $1); } // ?? c'est un appel de fonction ? 
 	;
 liste_expressions	:	
-		liste_expressions ',' expression
-	|	expression /* ajouté pour le cas d'une seule expression */
-	|	/* epsilon */		//{ $$ = ""; }
+		liste_expressions ',' expression	{printf("1\n");}
+	|	expression /* ajouté pour le cas d'une seule expression */ {printf("2\n");}
+	|	/* epsilon */			{printf("3\n");}
 	;
 condition	:	
 		NOT '(' condition ')'
