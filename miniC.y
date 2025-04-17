@@ -7,6 +7,7 @@
 #include "functions.h"
 
 #define COLOR_RED "\033[31m"
+#define COLOR_PURPLE "\033[35m"
 #define RESET_COLOR "\033[0m"
 
 int yylex();
@@ -21,11 +22,15 @@ extern FILE *yyin;
 %}
 
 %union {
-	int entier;
 	char *chaine;
-	char *code;
+	struct Node *node;
+	struct _nodeList *nodeList;
+
 	struct _variable *variable;
 	struct _variable **varTable;
+
+	// struct _functionList **functionTable;
+	struct _functionList *functionList_type;
 }
 /* %define YYSTYPE code */ // pas compatible avec yacc (que bison)
 /* %type <code> declarateur liste_declarations declaration type liste_declarateurs */
@@ -34,11 +39,19 @@ extern FILE *yyin;
 %type <code> fonction liste_fonctions
 %type <code> variable */
 %type <variable> declarateur liste_declarateurs declaration 
+%type <variable> parm liste_parms
 %type <varTable> liste_declarations
 
+/* %type <functionList_type> liste_fonctions */
+%type <node> fonction appel liste_expressions variable instruction
+%type <nodeList> liste_fonctions liste_instructions
 
-%token <entier> CONSTANTE
-%token <chaine> IDENTIFICATEUR
+%type <chaine> type
+
+
+
+/* %token <entier>  */
+%token <chaine> IDENTIFICATEUR CONSTANTE
 
 
 %token VOID INT FOR WHILE IF ELSE SWITCH CASE DEFAULT
@@ -59,7 +72,52 @@ extern FILE *yyin;
 %start programme
 %%
 programme	:	
-		liste_declarations liste_fonctions 
+		liste_declarations liste_fonctions {
+			// final_print($1, $2);
+			printf("Programme :\n");
+			printf("├── Declarations globales\n");
+			for (int i = 0; i < TAILLE; i++) {
+				if ($1[i] != NULL) {
+					variable *temp = $1[i];
+					while (temp != NULL) {
+						printf("│   ├── %s\n", temp->varName);
+						temp = temp->nextVar;
+					}
+				}
+			}
+			printf("│\n├── Fonctions\n");
+			nodeList *temp2 = $2;
+			while (temp2 != NULL) {
+				if (temp2->node->type == FUNCTION) {
+					printf("│   ├── Fonction : %s\n", temp2->node->function.name);
+					printf("│   │   │\n");
+					printf("│   │   ├── Type : %s\n", temp2->node->function.type);
+					printf("│   │   ├── Paramètres : (");
+					variable *temp = temp2->node->function.params;
+					while (temp != NULL) {
+						printf("%s, ", temp->varName);
+						temp = temp->nextVar;
+					}
+					printf(")\n");
+					printf("│   │   ├── Declarations\n");
+					
+					printf("│   │   ├── Instructions\n");
+					// nodeList *temp3 = temp2->node->function.instructions;
+					// while (temp3 != NULL) {
+					// 	if (temp3->node->type == FUNCTION_CALL) {
+					// 		printf("│   │   ├── Appel de fonction : %s\n", temp3->node->fctCall.name);
+					// 	} else if (temp3->node->type == VARIABLE) {
+					// 		printf("│   │   ├── Variable : %s\n", temp3->node->variable.name);
+					// 	} else if (temp3->node->type == TEST) {
+					// 		printf("│   │   ├── Test\n");
+					// 	}
+					// 	temp3 = temp3->next;
+					// }
+					printf("│   │\n");
+				}
+				temp2 = temp2->next;
+			}
+		}
 	;
 liste_declarations	:	
 		liste_declarations declaration 	{
@@ -83,14 +141,26 @@ liste_declarations	:
 				temp = temp->nextVar;
 				prev->nextVar = NULL; // on coupe la liste pour ne pas la relier à la fin
 			}
-			// print_var_table($$);
+			
+			
 
 		}
 	|	/* epsilon */ { $$ = new_varTable(); }
 	;
 liste_fonctions	:	
-		liste_fonctions fonction
-	|   fonction
+		liste_fonctions fonction {
+			/*on ajoute la fonction a la liste de fonctions*/
+			$$ = $1;
+			nodeList *temp = new_nodeList();
+			temp->node = $2;
+			temp->next = NULL;
+			append_nodeList($$, temp);
+		}
+	|   fonction { 
+			$$ = new_nodeList();
+			$$->next = NULL;
+			$$->node = $1;
+		}
 	;
 declaration	:	
 		type liste_declarateurs ';' {
@@ -127,43 +197,71 @@ liste_declarateurs	:
 	;
 declarateur	:	
 		IDENTIFICATEUR {
-			$$ = malloc(sizeof(variable));
-			if ($$ == NULL) {
-				fprintf(stderr, "Erreur d'allocation mémoire\n");
-				exit(1);
-			}
+			$$ = new_variable();
 			$$->varName = strdup($1);
-			$$->nextVar = NULL;
 		}
 	|	declarateur '[' CONSTANTE ']'
 	;
 fonction	:	
-		type IDENTIFICATEUR '(' liste_parms ')' '{' liste_declarations liste_instructions '}' 
-	|	EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'	
+		type IDENTIFICATEUR '(' liste_parms ')' '{' liste_declarations liste_instructions '}' {
+			$$ = new_node(FUNCTION);
+			$$->function.name = strdup($2);
+			$$->function.type = strdup($1);
+			$$->function.params = $4;
+			Node *temp = new_node(BLOCK);
+			temp->block.nodeList = $8;
+			$$->function.body = temp;
+
+		}
+	|	EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'	{
+			$$ = new_function_node();
+			$$->function.name = strdup($3);
+			$$->function.type = strdup($2);
+			printf("Fonction externe : %s | %s (", $2, $3);
+		}
+	
 	;
 type	:	
-		VOID
-	|	INT
+		VOID 	{ $$ = strdup("void"); }
+	|	INT		{ $$ = strdup("int"); }
 	;	
 liste_parms	:	
-		liste_parms ',' parm
-	|	parm
-	|	/* epsilon */
+		liste_parms ',' parm { 
+			if (append_variable($1, $3)) {
+				yyerror("Param name already used");
+			}
+			$$ = $1; }
+	|	parm { $$ = $1; }
+	|	/* epsilon */ { $$ = NULL; }
 	;
 parm:	
-		INT IDENTIFICATEUR {printf("4->%s\n", $2);}
+		INT IDENTIFICATEUR {$$ = new_variable(); $$->varName = strdup($2); }
 	;
 liste_instructions :	
-		liste_instructions instruction
-	|	/* epsilon *///{ $$ = ""; }
+		liste_instructions instruction {
+			/*on ajoute instruction a la liste d'instructions*/
+			if ($1 == NULL) {
+				$$ = new_nodeList();
+				$$->node = $2;
+				$$->next = NULL;
+			} else {
+				$$ = $1;
+				nodeList *temp = new_nodeList();
+				temp->node = $2;
+				temp->next = NULL;
+				append_nodeList($$, temp);
+				
+			}
+		}
+	|	/* epsilon */ { $$ = NULL; printf("liste_instructions : epsilon\n"); }
 	;
 instruction	:	
-		iteration
-	|	selection
-	|	saut
-	|	affectation ';'
-	|	bloc
-	|	appel
+		iteration { printf("iteration\n"); $$ = new_node(TEST); }
+	|	selection { printf("selection\n"); $$ = new_node(TEST); }
+	|	saut { printf("saut\n"); $$ = new_node(TEST); }
+	|	affectation ';' { printf("affectation\n"); $$ = new_node(TEST); } 
+	|	bloc { printf("bloc\n"); $$ = new_node(TEST); }
+	|	appel { printf("appel\n"); $$ = new_node(TEST); }
 	;
 iteration	:	
 		FOR '(' affectation ';' condition ';' affectation ')' instruction
@@ -188,19 +286,28 @@ bloc	:
 		'{' liste_declarations liste_instructions '}'
 	;
 appel	:	
-		IDENTIFICATEUR '(' liste_expressions ')' ';' {printf("appel de fonction : %s\n", $1);}
+		IDENTIFICATEUR '(' liste_expressions ')' ';' {
+			printf("appel de fonction : %s\n", $1);
+			$$ = new_node(FUNCTION_CALL);
+			$$->fctCall.name = strdup($1);
+			// $$->function_call.params = $3;
+		} 
 	;
 variable	:	
-		IDENTIFICATEUR	{printf("5->%s\n", $1);}
+		IDENTIFICATEUR	{
+			$$ = new_node(VARIABLE);
+			$$->variable.name = strdup($1);
+			printf("5->%s\n", $1);
+		}
 	|	variable '[' expression ']'
 	;
 expression	:	
-		'(' expression ')'
-	|	expression binary_op expression %prec OP
-	|	MOINS expression
-	|	CONSTANTE
+		'(' expression ')' 
+	|	expression binary_op expression %prec OP 
+	|	MOINS expression 
+	|	CONSTANTE 
 	|	variable
-	|	IDENTIFICATEUR '(' liste_expressions ')' { printf("6->%s\n", $1); } // ?? c'est un appel de fonction ? 
+	|	IDENTIFICATEUR '(' liste_expressions ')' // ?? c'est un appel de fonction ? 
 	;
 liste_expressions	:	
 		liste_expressions ',' expression	{printf("1\n");}
@@ -308,6 +415,41 @@ int main(int argc, char **argv) {
         strcpy($$, $1);  // Copie la première chaîne
         strcat($$, $2);  // Concatène la deuxième chaîne
     }
+
+
+
+			// printf("Fonction : %s\n", $$->function.name);
+			// printf("│\n├── Type : %s\n", $$->function.type);
+			// printf("├── Paramètres : (");
+			// variable *temp = $4;
+			// while (temp != NULL) {
+			// 	printf("%s, ", temp->varName);
+			// 	temp = temp->nextVar;
+			// }
+			// printf(")\n├── Declarations\n");
+			// for (int i = 0; i < TAILLE; i++) {
+			// 	if ($7[i] != NULL) {
+			// 		variable *temp = $7[i];
+			// 		while (temp != NULL) {
+			// 			printf("│   ├── %s\n", temp->varName);
+			// 			temp = temp->nextVar;
+			// 		}
+			// 	}
+			// }
+			// printf("│\n├── Instructions\n");
+			// nodeList *temp2 = $8;
+			// while (temp2 != NULL) {
+			// 	if (temp2->node->type == FUNCTION_CALL) {
+			// 		printf("│   ├── Appel de fonction : %s\n", temp2->node->fctCall.name);
+			// 	} else if (temp2->node->type == VARIABLE) {
+			// 		printf("│   ├── Variable : %s\n", temp2->node->variable.name);
+			// 	} else if (temp2->node->type == TEST) {
+			// 		printf("│   ├── Test\n");
+			// 	}
+			// 	temp2 = temp2->next;
+			// }
+			// printf("\n");
+
 
 */
 

@@ -9,7 +9,7 @@
 
 int compteur = 0;
 // var **varTable[TAILLE];
-function **functionTable[TAILLE]; //un seul niveau de declaration possible
+// functionList **functionTable[TAILLE]; //un seul niveau de declaration possible
 
 int hash(char *nom) {
     int h = 0;
@@ -98,6 +98,152 @@ void print_var_table(variable **table) {
     }
 }
 
+Node *new_node(NodeType type) {
+    Node *newNode = malloc(sizeof(Node));
+    if (newNode == NULL) {
+        fprintf(stderr, "Erreur d'allocation mémoire\n");
+        exit(1);
+    }
+    newNode->type = type;
+    return newNode;
+}
+
+Node *new_function_node(void) {
+    Node *newNode = malloc(sizeof(Node));
+    if (newNode == NULL) {
+        fprintf(stderr, "Erreur d'allocation mémoire\n");
+        exit(1);
+    }
+    newNode->type = FUNCTION;
+    newNode->function.name = NULL;
+    newNode->function.type = NULL;
+    newNode->function.varTable = NULL;
+    newNode->function.body = NULL;
+    return newNode;
+}
+
+functionList *new_functionList(void) {
+    functionList *newFunc = malloc(sizeof(functionList));
+    if (newFunc == NULL) {
+        fprintf(stderr, "Erreur d'allocation mémoire\n");
+        exit(1);
+    }
+    newFunc->function = NULL;
+    newFunc->next = NULL;
+    return newFunc;
+}
+
+functionList **new_functionTable(void) {
+    functionList **newTable = malloc(TAILLE * sizeof(functionList *));
+    if (newTable == NULL) {
+        fprintf(stderr, "Erreur d'allocation mémoire\n");
+        exit(1);
+    }
+    for (int i = 0; i < TAILLE; i++) {
+        newTable[i] = NULL;
+    }
+    return newTable;
+}
+
+int append_functionList(functionList *func1, functionList *func2) {
+    if (func2 == NULL) {
+        return 0;
+    }
+    if (func1 == NULL) {
+        func1 = func2;
+        return 0;
+    }
+    functionList *temp = func1;
+    while (temp->next != NULL) {
+        if (strcmp(temp->function->function.name, func2->function->function.name) == 0) {
+            return 1; // La fonction existe déjà
+        }
+        temp = temp->next;
+    }
+    if (strcmp(temp->function->function.name, func2->function->function.name) == 0) {
+        return 1; // La fonction existe déjà
+    }
+    temp->next = func2;
+    return 0;
+}
+
+int add_function(functionList **table, functionList *func) {
+    /*
+    Ajoute une fonction à la hashtable donée
+    La fonction est ajoutée à la fin de la liste chaînée
+    return 1 si la fonction existe déjà
+    return 0 si la fonction a été ajoutée
+    */
+    int h = hash(func->function->function.name);
+    if (table[h] == NULL) {
+        table[h] = func;
+        return 0;
+    }
+    return append_functionList(table[h], func);
+}   
+
+
+// void final_print(variable **varTable, function *funcList) {
+//     printf("-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-\n");
+//     printf("Variables globales :");
+//     for (int i = 0; i < TAILLE; i++) {
+//         if (varTable[i] != NULL) {
+//             variable *current = varTable[i];
+//             while (current != NULL) {
+//                 printf(" %s", current->varName);
+//                 current = current->nextVar;
+//             }
+//         }
+//     }
+//     printf("\n");       
+//     printf("Arbre : \n");
+//     printf("│\n");
+//     function *temp = funcList;
+//     while (temp != NULL) {
+//         printf("├── name: \"%s\"\n", temp->name);
+//         printf("├── return_type: \"%s\"\n", temp->type);
+//         printf("├── params: \n");
+//         printf("├── Body: \n");
+//         printf("│   ├── Declarations\n");
+
+        
+//         printf("│   │\n");
+//         printf("│   │\n");
+//         printf("│   └── ReturnNode\n");
+
+
+//         printf("│\n");
+//         temp = temp->nextFunc;
+//     }
+// }
+
+
+nodeList *new_nodeList(void) {
+    nodeList *newList = malloc(sizeof(nodeList));
+    if (newList == NULL) {
+        fprintf(stderr, "Erreur d'allocation mémoire\n");
+        exit(1);
+    }
+    newList->node = NULL;
+    newList->next = NULL;
+    return newList;
+}
+
+int append_nodeList(nodeList *list1, nodeList *list2) {
+    if (list2 == NULL) {
+        return 0;
+    }
+    if (list1 == NULL) {
+        list1 = list2;
+        return 0;
+    }
+    nodeList *temp = list1;
+    while (temp->next != NULL) {
+        temp = temp->next;
+    }
+    temp->next = list2;
+    return 0;
+}
 
 /*===================================Partie DOT===================================*/
 
