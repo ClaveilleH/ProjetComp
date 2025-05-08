@@ -5,3 +5,5 @@ y.tab.h
 *.o
 *.*.h
 output.dot
+y.output
+.vscode/

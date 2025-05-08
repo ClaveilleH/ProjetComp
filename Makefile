@@ -2,14 +2,14 @@
 CC = gcc
 
 # Source files
-NAME = 3
 LEX_SRC = main.l
 YACC_SRC = miniC.y
-FUNC_SRC = functions.c
+SYMBOL_SRC = symboles.c
 
 # Generated files
 LEX_GEN = lex.yy.c
 YACC_GEN = y.tab.c y.tab.h
+
 
 
 # Output executable
@@ -23,11 +23,11 @@ $(LEX_GEN): $(LEX_SRC)
 	lex $(LEX_SRC)
 
 $(YACC_GEN): $(YACC_SRC)
-	yacc -d $(YACC_SRC)
+	yacc -d -v $(YACC_SRC)
 
 # Link the object files to create the executable
-$(TARGET): $(LEX_GEN) $(YACC_GEN) $(FUNC_SRC)
-	$(CC) -o $(TARGET) $(FUNC_SRC) lex.yy.c y.tab.c -lfl
+$(TARGET): $(YACC_GEN) $(LEX_GEN)  $(SYMBOL_SRC)
+	$(CC) -o $(TARGET) $(FUNC_SRC) lex.yy.c y.tab.c $(SYMBOL_SRC) -lfl
 
 # Clean up build files
 clean:
