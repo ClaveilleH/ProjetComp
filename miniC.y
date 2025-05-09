@@ -29,6 +29,8 @@ liste_t * creer_liste( param_t p );
 liste_t * concatener_listes( liste_t *l1, liste_t *l2 );
 void afficher_liste( liste_t *liste ); 
 
+NodeList *liste_fonctions = NULL; // liste globale des fonctions
+
 %}
 
 %union {
@@ -72,19 +74,47 @@ void afficher_liste( liste_t *liste );
 %type <sym> variable
 
 %type <type> type
-%type <param> parm
-%type <liste> liste_parms
+/* %type <param> parm */
+/* %type <liste> liste_parms */
 
-%type <node> declarateur
-%type <node_list> liste_declarateurs declaration
+%type <node> declarateur parm fonction
+%type <node_list> liste_declarateurs declaration liste_parms liste_fonctions
 %type <node_table> liste_declarations
 
 %%
 programme	:	
 		liste_declarations liste_fonctions {
+			// └
 			printf("Programme complet\n");
-			// afficher_liste($1);
-			// afficher_fonction_table();
+			printf("Programme :\n");
+			printf("├── Déclarations globales\n");
+			NodeList *tmp;
+			for (int i = 0; i < TAILLE; i++) {
+				if ($1[i] != NULL) {
+					tmp = $1[i];
+					while (tmp != NULL) {
+						printf("│   ├── %s\n", tmp->node->symbole.nom);
+						tmp = tmp->suivant;
+					}
+				}
+			}
+			printf("└── Fonctions\n");
+			tmp = $2;
+			while (tmp != NULL) {
+				printf("    ├── %s\n", tmp->node->fonction.nom);
+				printf("    │	│\n");
+				printf("    │	├── Type : %s\n", tmp->node->fonction.type == ENTIER ? "int" : "void");
+				NodeList *tmp2 = tmp->node->fonction.liste_parametres;
+				printf("    │	├── Paramètres : (");
+				while (tmp2 != NULL) {
+					printf("%s, ", tmp2->node->parametre.nom);
+					tmp2 = tmp2->suivant;
+				}
+				printf(")\n");
+				printf("    │	├── Déclarations :\n");
+				printf("    │	└── Instructions :\n");
+				tmp = tmp->suivant;
+			}
 		}
 ;
 
@@ -114,14 +144,22 @@ liste_declarations	:
 					tmp = tmp->suivant;
 				}
 			}
-			afficher_node_table($$);
+			// afficher_node_table($$);
 		}
 	| /* epsilon */ {printf("Liste de déclarations vide\n"); $$ = creer_node_table(); }
 ;
 
 liste_fonctions	:	
-		liste_fonctions fonction
-|               fonction
+		liste_fonctions fonction {
+			if (append_node($1, $2)) {
+				char *s = malloc( strlen("Redeclaration de la fonction :") + strlen($2->fonction.nom) + 1);
+				sprintf(s, "Redeclaration de la fonction : %s", $2->fonction.nom);
+				error(s);
+			}
+		}
+	|	fonction {
+			$$ = nouveau_node_list($1);
+		}
 ;
 
 declaration	:	
@@ -132,22 +170,10 @@ declaration	:
 
 liste_declarateurs	:	
 		liste_declarateurs ',' declarateur {
-			// on ajoute declarateur à la fin de la liste de déclarateurs en verifiant que la variable n'existe pas déjà
-			$$ = $1;
-			NodeList *tmp = $1;
-			while (tmp->suivant != NULL) {
-				if (strcmp(tmp->node->symbole.nom, $3->symbole.nom) == 0) {
-					// on verifie si la variable existe déjà
-					yyerror("Variable already declared in this scope");
-				}
-				tmp = tmp->suivant;
-			}
-			// on verifie si la variable existe déjà
-			if (strcmp(tmp->node->symbole.nom, $3->symbole.nom) == 0) {
-				yyerror("Variable already declared in this scope");
-			}
-			tmp->suivant = nouveau_node_list($3);
-
+			// on ajoute declarateur au début de la liste
+			// on verifie pas encore si la variable existe déjà
+			$$ = nouveau_node_list($3);
+			$$->suivant = $1;
 		}
 	|	declarateur {
 		$$ = nouveau_node_list($1);
@@ -156,30 +182,38 @@ liste_declarateurs	:
 
 declarateur:
     IDENTIFICATEUR {
-		// On crée un nouveau noeud pour la déclaration de variable
-		// on verifie pas encore si la variable existe déjà
-		printf("Déclaration de variable : %s, type :%d\n", $1, $<type>-2);
-		// nouveau_node(SYMBOLE);
-		
-		$$ = nouveau_node(SYMBOLE);
-		$$->symbole.nom = $1;
-		$$->symbole.type = ENTIER; //$<type>-2; // NE MARCHE PAS type transmis via $-2 (depuis 'type') (dans 'declaration')
-		$$->symbole.valeur = 0; // valeur initiale à 0 
-		// mettre un param .isInitialized à 0
-		
-    }
+			// On crée un nouveau noeud pour la déclaration de variable
+			// on verifie pas encore si la variable existe déjà
+			printf("Déclaration de variable : %s, type :%d\n", $1, $<type>-2);
+						
+			$$ = nouveau_node(SYMBOLE);
+			$$->symbole.nom = $1;
+			$$->symbole.type = ENTIER; //$<type>-2; // NE MARCHE PAS type transmis via $-2 (depuis 'type') (dans 'declaration')
+			$$->symbole.valeur = 0; // valeur initiale à 0 
+			// TODO: mettre un param .isInitialized à 0
+			
+		}
 ;
 
 
 fonction:
     type IDENTIFICATEUR '(' liste_parms ')' '{' liste_declarations liste_instructions '}' {
-        fonction_t *f = ajouter_fonction($1, $2, $4);
-        if (f != NULL ) afficher_fonction(f);
-    }
-  | EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';' {
-        fonction_t *f = ajouter_fonction($2, $3, $5);
-        if (f) afficher_fonction(f);
-    }
+			// affiche_node_list($4);
+			$$ = nouveau_node(FONCTION);
+			$$->fonction.nom = $2;
+			$$->fonction.type = $1;
+			$$->fonction.liste_parametres = $4;
+			
+
+			append_node(liste_fonctions, $$);
+		}
+  	| EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';' {
+			$$ = nouveau_node(FONCTION);
+			$$->fonction.nom = $3;
+			$$->fonction.type = $2;
+			$$->fonction.liste_parametres = $5;
+			//! ATTENION EXTERNE
+		}
 ;
 
 
@@ -189,17 +223,23 @@ type: VOID { $$ = VOID_TYPE; }
 
 
 liste_parms	:	
-		parm	{ $$ = creer_liste($1); printf("-----Paramètre : int %s\n", $1.nom); }
-	|	liste_parms ',' parm	{ $$ = concatener_listes( $1, creer_liste($3)); }
+		parm	{
+			$$ = nouveau_node_list($1);
+			// printf("-----Paramètre : int %s\n", $1->parametre.nom);
+		}
+	|	liste_parms ',' parm	{
+			$$ = $1;
+			if (append_node($$, $3)) {
+				yyerror("Paramètre déjà déclaré dans cette fonction");
+			}
+		} //concatener_listes( $1, creer_liste($3)); }
 	|   /* vide */ { $$ = NULL; }	
 ;
 
-parm: INT IDENTIFICATEUR { 
-    printf("Paramètre : int %s\n", $2); 
-    param_t p;
-    p.type = ENTIER;
-    p.nom = $2;
-    $$ = p;
+parm: INT IDENTIFICATEUR {
+	$$ = nouveau_node(PARAMETRE);
+	$$->parametre.type = ENTIER;
+	$$->parametre.nom = $2;
 }
 ;
 

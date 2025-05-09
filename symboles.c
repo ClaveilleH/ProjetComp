@@ -5,7 +5,6 @@
 #include "symboles.h"
 
 
-#define TAILLE 103  //nombre premier 
 
 //table des symboles avec une table de hachage 
 symbole *tableGlobale[TAILLE];
@@ -17,7 +16,6 @@ symbole *tableGlobale[TAILLE];
 //table de symboles pour un bloc (et permet des blocs imbriqués)
 table_t *pile_tables = NULL; // le sommet de la pile
 
-NodeList *allNodesList = NULL; // liste de tous les noeuds
 
 
 int hash( char *nom ) {
@@ -229,6 +227,11 @@ Node *nouveau_node(NodeType type) {
         node->symbole.taille = 1;
         node->symbole.position = 0;
         // node->symbole.suivant = NULL;
+    } else if (type == FONCTION) {
+        node->fonction.nom = NULL;
+        node->fonction.type = ENTIER;
+        // node->fonction.arguments = NULL;
+        // node->fonction.suivant = NULL;
     }
     return node;
 }
@@ -267,6 +270,11 @@ int append_node(NodeList *list, Node *node) {
     }
     if (temp->node->type == SYMBOLE && node->type == SYMBOLE) { // si le type est SYMBOLE
         if (strcmp(temp->node->symbole.nom, node->symbole.nom) == 0) { // Vérifie si le nom est déjà présent
+            return 1; // Erreur d'ajout
+        }
+    }
+    if (temp->node->type == PARAMETRE && node->type == PARAMETRE) { // si le type est PARAMETRE
+        if (strcmp(temp->node->parametre.nom, node->parametre.nom) == 0) { // Vérifie si le nom est déjà présent
             return 1; // Erreur d'ajout
         }
     }

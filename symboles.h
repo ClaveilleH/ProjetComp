@@ -2,6 +2,7 @@
 #define SYMBOLES_H
 #include <stdlib.h>
 
+#define TAILLE 103  //nombre premier 
 
 
 typedef enum { ENTIER, VOID_TYPE } type_t;
@@ -20,11 +21,14 @@ symbole *inserer(char *nom);
 symbole *chercher(char *nom);
 void table_reset();
 
-typedef enum { SYMBOLE, } NodeType;
+typedef enum { SYMBOLE, FONCTION, PARAMETRE, } NodeType;
+typedef struct NodeList NodeList; // declaration anticipée
 typedef struct Node {
     NodeType type;
     union {
         struct { char *nom; int valeur; type_t type; int taille; int position; } symbole;
+        struct { char *nom; type_t type; NodeList *liste_parametres; } fonction;
+        struct { char *nom; type_t type; } parametre;
         
     };
 } Node;
