@@ -313,6 +313,8 @@ expression	:
     | expression MOINS expression     { $$ = $1 - $3; printf("Soustraction : %d - %d = %d\n", $1, $3, $1 - $3); }
     | expression MUL expression       { $$ = $1 * $3; printf("Multiplication : %d * %d = %d\n", $1, $3, $1 * $3); }
     | expression DIV expression       { $$ = $1 / $3;  printf("Division : %d / %d = %d\n", $1, $3, $1 / $3); }
+	| expression LSHIFT expression   { $$ = $1 << $3; printf("LSHIFT: %d << %d = %d\n", $1, $3, $$); }
+    | expression RSHIFT expression   { $$ = $1 >> $3; printf("RSHIFT: %d >> %d = %d\n", $1, $3, $$); }
 	| CONSTANTE              		  { $$ = $1;  printf("Constante : %d\n", $1); }
 	| variable 						  { $$ = $1->valeur; printf("Variable : %s = %d\n", $1->nom, $1->valeur); }
 	| IDENTIFICATEUR '(' liste_expressions ')' { printf("Appel fonction %s\n", $1); $$ = 0; }
