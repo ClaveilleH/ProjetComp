@@ -166,6 +166,8 @@ declaration	:
 		type liste_declarateurs ';' {
 			$$ = $2;
 		}
+		// Déclaration avec initialisation
+		|type liste_declarateurs '=' expression ';' {$$ = $2; }
 ;
 
 liste_declarateurs	:	
@@ -250,9 +252,9 @@ liste_instructions :
 ;
 
 instruction:
-    affectation ';'
-  | appel 
-  | iteration
+    affectation ';'			 { printf("Instruction : affectation\n"); }
+  | expression ';'           { printf("Instruction : expression seule\n"); }
+  | iteration				 { printf("Instruction : boucle\n"); }
   | selection
   | saut
   | bloc
@@ -279,8 +281,7 @@ saut	:
 ;
 
 affectation	:
-	expression	{ printf("Expression seule : %d\n", $1); }
-	| variable '=' expression { $1->valeur = $3;
+	variable '=' expression { $1->valeur = $3;
 								printf("Affectation : %s = %d\n", $1->nom, $3); 
 							  }
 ;
@@ -295,9 +296,7 @@ bloc : '{' {
 ;
 
 
-appel	:	
-		IDENTIFICATEUR '(' liste_expressions ')' ';' { printf("Appel de fonction (instruction) : %s\n", $1); }
-;
+
 
 
 

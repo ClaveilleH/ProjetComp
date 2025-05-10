@@ -24,7 +24,7 @@ int main(){
     int q ;
     int r ;
     */
-    int x;
+    int x = 1;
     return 0;
 }
 
