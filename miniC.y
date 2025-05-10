@@ -369,7 +369,7 @@ expression	:
     | expression MUL expression       { $$ = $1 * $3; printf("Multiplication : %d * %d = %d\n", $1, $3, $1 * $3); }
     | expression DIV expression       { $$ = $1 / $3;  printf("Division : %d / %d = %d\n", $1, $3, $1 / $3); }
 	| CONSTANTE              		  { $$ = $1;  printf("Constante : %d\n", $1); }
-	| variable 						  { $$ = $1->valeur; printf("Variable : %s = %d\n", $1->nom, $1->valeur); }
+	| variable 						  { $$ = $1->symbole.valeur; printf("Variable : %s = %d\n", $1->symbole.nom, $1->symbole.valeur); }
 	| IDENTIFICATEUR '(' liste_expressions ')' { printf("Appel fonction %s\n", $1); $$ = 0; }
 ;
 
