@@ -16,6 +16,9 @@ symbole *tableGlobale[TAILLE];
 //table de symboles pour un bloc (et permet des blocs imbriqués)
 table_t *pile_tables = NULL; // le sommet de la pile
 
+NodePile *pile_variables = NULL; // le sommet de la pile de variables
+
+
 
 
 int hash( char *nom ) {
@@ -165,6 +168,11 @@ void push_table() {
     nouvelle->symboles = NULL;
     nouvelle->suivant = pile_tables;
     pile_tables = nouvelle;
+
+    NodePile *nouvelle_pile = malloc(sizeof(NodePile));
+    nouvelle_pile->node = NULL;
+    nouvelle_pile->suivant = pile_variables;
+    pile_variables = nouvelle_pile;
 }
 //fermer un bloc en dépilant les symboles
 void pop_table() {
@@ -173,7 +181,14 @@ void pop_table() {
         pile_tables = pile_tables->suivant;
         free(temp);
     }
+
+    if (pile_variables) {
+        NodePile *temp = pile_variables;
+        pile_variables = pile_variables->suivant;
+        free(temp);
+    }
 }
+
 
 symbole *ajouter_symbole(char *nom, type_t type, int init) {
     //Vérifie si la variable existe déjà dans le bloc courant
@@ -304,6 +319,10 @@ void affiche_node_list(NodeList *nodeList) {
 }
 
 void afficher_node_table(NodeList **nodeList) {
+    if (nodeList == NULL) {
+        printf("Table vide\n");
+        return;
+    }
     for (int i = 0; i < TAILLE; i++) {
         if (nodeList[i] != NULL) {
             printf("[%d]", i);
@@ -317,4 +336,52 @@ void afficher_node_table(NodeList **nodeList) {
             printf("\n");
         }
     }
+}
+
+int ajouter_variable(Node *node) {
+    // On ajoute le symbole à la pile de variables
+    NodeList **courant = pile_variables->node;
+    if (courant == NULL) {
+        pile_variables->node = creer_node_table();
+        courant = pile_variables->node;
+    }
+    int h = hash(node->symbole.nom);
+    if (courant[h] == NULL) {
+        courant[h] = nouveau_node_list(node);
+        return 0; // Ajout réussi
+    }
+    
+    NodeList *temp = courant[h];
+    while (temp->suivant != NULL) {
+        if (strcmp(temp->node->symbole.nom, node->symbole.nom) == 0) {
+            return 1; // Erreur d'ajout
+        }
+        temp = temp->suivant;
+    }
+    if (strcmp(temp->node->symbole.nom, node->symbole.nom) == 0) {
+        return 1; // Erreur d'ajout
+    }
+    temp->suivant = nouveau_node_list(node);
+    
+    return 0; // Ajout réussi
+}
+
+Node *chercher_variable(char *nom) {
+    int h = hash(nom);
+    NodeList **courant = pile_variables->node;
+    if (courant == NULL) {
+        return NULL; // Pas de variables dans la pile
+    }
+    NodeList *temp = courant[h];
+    while (temp != NULL) {
+        if (strcmp(temp->node->symbole.nom, nom) == 0) {
+            return temp->node; // Variable trouvée
+        }
+        temp = temp->suivant;
+    }
+    return NULL; // Variable non trouvée
+}
+
+NodePile *get_pile() {
+    return pile_variables;
 }

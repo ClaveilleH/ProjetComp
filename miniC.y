@@ -71,13 +71,13 @@ NodeList *liste_fonctions = NULL; // liste globale des fonctions
 
 
 %type <entier> expression
-%type <sym> variable
+/* %type <sym> variable */
 
 %type <type> type
 /* %type <param> parm */
 /* %type <liste> liste_parms */
 
-%type <node> declarateur parm fonction
+%type <node> declarateur parm fonction variable affectation
 %type <node_list> liste_declarateurs declaration liste_parms liste_fonctions
 %type <node_table> liste_declarations
 
@@ -112,6 +112,21 @@ programme	:
 				}
 				printf(")\n");
 				printf("    │	├── Déclarations :\n");
+				NodeList **tmp3 = tmp->node->fonction.table_declarations;
+				for (int i = 0; i < TAILLE; i++) {
+					if (tmp3[i] != NULL) {
+						tmp2 = tmp3[i];
+						while (tmp2 != NULL) {
+							if (tmp2->node->symbole.valeur != 0) {
+								printf("    │	│   ├── %s : %d\n", tmp2->node->symbole.nom, tmp2->node->symbole.valeur);
+							} else {
+								printf("    │	│   ├── %s\n", tmp2->node->symbole.nom);
+							}
+							tmp2 = tmp2->suivant;
+						}
+					}
+				}
+				printf("    │	│\n");
 				printf("    │	└── Instructions :\n");
 				tmp = tmp->suivant;
 			}
@@ -194,20 +209,26 @@ declarateur:
 			$$->symbole.valeur = 0; // valeur initiale à 0 
 			// TODO: mettre un param .isInitialized à 0
 			
+			ajouter_variable($$); // on ajoute la variable à la table de symboles courante
+			//? mettre la verification ici ?
 		}
 ;
 
 
 fonction:
-    type IDENTIFICATEUR '(' liste_parms ')' '{' liste_declarations liste_instructions '}' {
+    type IDENTIFICATEUR '(' liste_parms ')' '{' {push_table();} // ouverture de bloc
+		liste_declarations liste_instructions '}' {
 			// affiche_node_list($4);
 			$$ = nouveau_node(FONCTION);
 			$$->fonction.nom = $2;
 			$$->fonction.type = $1;
 			$$->fonction.liste_parametres = $4;
+			$$->fonction.table_declarations = $8;
+			// $$->fonction.liste_instructions = $8;
 			
 
 			append_node(liste_fonctions, $$);
+			pop_table(); // fermeture de bloc
 		}
   	| EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';' {
 			$$ = nouveau_node(FONCTION);
@@ -281,17 +302,34 @@ saut	:
 ;
 
 affectation	:
-	variable '=' expression { $1->valeur = $3;
-								printf("Affectation : %s = %d\n", $1->nom, $3); 
-							  }
+	expression	{ 
+		printf("Expression seule : %d\n", $1); 
+	}
+	| 	variable '=' expression { 
+			$$ = $1;
+			$1->symbole.isInitialized = 1; // on met la variable comme initialisée
+			$1->symbole.valeur = $3; // affectation de la valeur
+			printf("Affectation : %s = %d\n", $1->symbole.nom, 0);
+			//! ATTENTION : IL FAUT EVALUER L'EXPRESSION
+		}
 ;
 
 bloc : '{' {
+			afficher_node_table(get_pile()->node);
+
             push_table(); // ouverture de bloc
+			// printf("Ouverture de bloc\n");
         }
         liste_declarations liste_instructions 
         '}' {
+			afficher_node_table(get_pile()->node);
+
             pop_table(); // fermeture de bloc
+			// printf("Fermeture de bloc\n");
+			printf("-----------\n");
+			// affiche_node_list();
+			afficher_node_table(get_pile()->node);
+			printf("-----------\n");
         }
 ;
 
@@ -301,7 +339,25 @@ bloc : '{' {
 
 
 variable	:	// quand on utilise une variable
-		IDENTIFICATEUR { $$ = inserer($1); }
+		IDENTIFICATEUR { /*$$ = inserer($1);*/ //jpense pas qu'il faille utiliser ca ici
+			// il faut verif si ca existe déjà
+			// sinon on leve une erreur
+			Node *result = chercher_variable($1);
+			if (result == NULL) {
+				char *s = malloc( strlen("Variable utilisée mais jamais déclarée :") + strlen($1) + 1);
+				sprintf(s, "Variable utilisée mais jamais déclarée : %s", $1);
+				error(s); // -> kill
+			}
+			if (result->symbole.isInitialized == 0) {
+				char *s = malloc( strlen("Variable utilisée mais jamais initialisée :") + strlen($1) + 1);
+				sprintf(s, "Variable utilisée mais jamais initialisée : %s", $1);
+				// WARNING -------------- A FAIRE
+				// warning(s); // -> warning
+			}
+
+			// sinon on renvoie la variable
+			$$ = result;
+		}
 	|	variable '[' expression ']'
 ;
 
@@ -312,8 +368,6 @@ expression	:
     | expression MOINS expression     { $$ = $1 - $3; printf("Soustraction : %d - %d = %d\n", $1, $3, $1 - $3); }
     | expression MUL expression       { $$ = $1 * $3; printf("Multiplication : %d * %d = %d\n", $1, $3, $1 * $3); }
     | expression DIV expression       { $$ = $1 / $3;  printf("Division : %d / %d = %d\n", $1, $3, $1 / $3); }
-	| expression LSHIFT expression   { $$ = $1 << $3; printf("LSHIFT: %d << %d = %d\n", $1, $3, $$); }
-    | expression RSHIFT expression   { $$ = $1 >> $3; printf("RSHIFT: %d >> %d = %d\n", $1, $3, $$); }
 	| CONSTANTE              		  { $$ = $1;  printf("Constante : %d\n", $1); }
 	| variable 						  { $$ = $1->valeur; printf("Variable : %s = %d\n", $1->nom, $1->valeur); }
 	| IDENTIFICATEUR '(' liste_expressions ')' { printf("Appel fonction %s\n", $1); $$ = 0; }

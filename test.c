@@ -30,4 +30,12 @@ int main(){
 
 
 
-void main2(int abc, int aa) {}
+void main2(int abc, int aa) {
+    int a;
+    int b;
+    a = 10;
+    b = a;
+    // {
+    //     int a;
+    // }
+}
