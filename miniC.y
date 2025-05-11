@@ -17,17 +17,10 @@ extern FILE *yyin;
 int yylex(void);       
 void yyerror(char *s);
 void error(char *s);
+void warn(char *s);
 void yylex_destroy(void);
 
 FILE *file;
-
-void table_reset(); 
-symbole *inserer(char *nom);
-symbole *chercher(char *nom);
-
-liste_t * creer_liste( param_t p ); 
-liste_t * concatener_listes( liste_t *l1, liste_t *l2 );
-void afficher_liste( liste_t *liste ); 
 
 NodeList *liste_fonctions = NULL; // liste globale des fonctions
 
@@ -36,10 +29,7 @@ NodeList *liste_fonctions = NULL; // liste globale des fonctions
 %union {
     int entier;
     char *chaine;
-    struct symbole *sym;
 	type_t type;
-	param_t param;
-	liste_t *liste;
 
 	struct Node *node;
 	struct NodeList *node_list;
@@ -70,16 +60,13 @@ NodeList *liste_fonctions = NULL; // liste globale des fonctions
 %start programme
 
 
-%type <entier> expression
-/* %type <sym> variable */
-
+/* %type <entier> expression */
+%type <chaine> binary_comp
 %type <type> type
-/* %type <param> parm */
-/* %type <liste> liste_parms */
 
-%type <node> declarateur parm fonction variable affectation
-%type <node_list> liste_declarateurs declaration liste_parms liste_fonctions
-%type <node_table> liste_declarations
+%type <node> declarateur parm fonction variable affectation instruction selection saut condition expression
+%type <node_list> liste_declarateurs declaration liste_parms liste_fonctions liste_instructions
+%type <node_table> liste_declarations 
 
 %%
 programme	:	
@@ -93,7 +80,8 @@ programme	:
 				if ($1[i] != NULL) {
 					tmp = $1[i];
 					while (tmp != NULL) {
-						printf("│   ├── %s\n", tmp->node->symbole.nom);
+						// printf("│   ├── %s\n", tmp->node->symbole.nom);
+						afficher_node2("│   ├──", tmp->node);
 						tmp = tmp->suivant;
 					}
 				}
@@ -117,17 +105,14 @@ programme	:
 					if (tmp3[i] != NULL) {
 						tmp2 = tmp3[i];
 						while (tmp2 != NULL) {
-							if (tmp2->node->symbole.valeur != 0) {
-								printf("    │	│   ├── %s : %d\n", tmp2->node->symbole.nom, tmp2->node->symbole.valeur);
-							} else {
-								printf("    │	│   ├── %s\n", tmp2->node->symbole.nom);
-							}
+							afficher_node2("    │	│   ", tmp2->node);
 							tmp2 = tmp2->suivant;
 						}
 					}
 				}
 				printf("    │	│\n");
 				printf("    │	└── Instructions :\n");
+				afficher_instructions(tmp->node->fonction.liste_instructions);
 				tmp = tmp->suivant;
 			}
 		}
@@ -207,6 +192,8 @@ declarateur:
 			$$->symbole.nom = $1;
 			$$->symbole.type = ENTIER; //$<type>-2; // NE MARCHE PAS type transmis via $-2 (depuis 'type') (dans 'declaration')
 			$$->symbole.valeur = 0; // valeur initiale à 0 
+			$$->symbole.isInitialized = 0; // on met la variable comme non initialisée
+			$$->symbole.evaluable = 0; // on met la variable comme non évaluable
 			// TODO: mettre un param .isInitialized à 0
 			
 			ajouter_variable($$); // on ajoute la variable à la table de symboles courante
@@ -224,7 +211,7 @@ fonction:
 			$$->fonction.type = $1;
 			$$->fonction.liste_parametres = $4;
 			$$->fonction.table_declarations = $8;
-			// $$->fonction.liste_instructions = $8;
+			$$->fonction.liste_instructions = $9;
 			
 
 			append_node(liste_fonctions, $$);
@@ -263,22 +250,75 @@ parm: INT IDENTIFICATEUR {
 	$$ = nouveau_node(PARAMETRE);
 	$$->parametre.type = ENTIER;
 	$$->parametre.nom = $2;
+
+	ajouter_parametre($$); // on ajoute le paramètre à la table de symboles courante
 }
 ;
 
 
 liste_instructions :	
-		liste_instructions instruction
-	|
+		liste_instructions instruction {
+			// on ajoute instruction a la fin de la liste
+			// on verifie pas encore si la variable existe déjà
+			if ($1 == NULL) {
+				$$ = nouveau_node_list($2);
+				
+			} else {
+				// on ajoute instruction au début de la liste
+				// on verifie pas encore si la variable existe déjà
+				$$ = $1;
+				NodeList *nouv = nouveau_node_list($2);
+				nouv->suivant = NULL; // pour pas faire une boucle
+				
+				if ($$->suivant == NULL) {
+					$$->suivant = nouv;
+					$$->precedent = nouv;
+					nouv->precedent = $$;
+				} else {
+					nouv->precedent = $$->precedent;
+					$$->precedent->suivant = nouv;
+					$$->precedent = nouv;
+					$$->precedent = nouv;
+
+				}
+			}
+			// $$ = $1;
+			// NodeList *nouv = nouveau_node_list($2);
+			
+			// nouv->suivant = $$->precedent;
+			// nouv->suivant->precedent = nouv;
+			// $$->precedent = nouv;
+			// nouv->precedent = $$;
+			// printf("Liste d'instructions : \n");
+		}
+	|   /* epsilon */ { printf("Liste d'instructions vide\n"); $$ = NULL; }
 ;
 
 instruction:
-    affectation ';'			 { printf("Instruction : affectation\n"); }
-  | expression ';'           { printf("Instruction : expression seule\n"); }
-  | iteration				 { printf("Instruction : boucle\n"); }
-  | selection
-  | saut
-  | bloc
+    affectation ';'			 { printf("Instruction : affectation\n"); 
+		$$ = nouveau_node(TEST);
+		$$->test.txt = "Instruction : Affectation";
+	}
+  	| expression ';'           { printf("Instruction : expression seule\n");
+		$$ = nouveau_node(TEST);
+		$$->test.txt = "Instruction : Expression seule";
+	}
+	| iteration				 { printf("Instruction : boucle\n"); 
+		$$ = nouveau_node(TEST);
+		$$->test.txt = "Instruction : boucle";
+	}
+	| selection 			 { printf("Instruction : selection\n"); 
+		// $$ = nouveau_node(TEST);
+		// $$->test.txt = "Instruction : selection";
+		$$ = $1;
+	}
+	| saut					 { printf("Instruction : saut\n"); 
+		$$ = $1;
+	}
+	| bloc	 				 { printf("Instruction : bloc\n"); 
+		$$ = nouveau_node(TEST);
+		$$->test.txt = "Instruction : bloc";
+	}
 ;
 
 
@@ -288,28 +328,53 @@ iteration	:
 ;
 
 selection	:	
-		IF '(' condition ')' instruction %prec THEN 	    { printf("Instruction IF\n"); }
-	|	IF '(' condition ')' instruction ELSE instruction	{ printf("Instruction IF ... ELSE\n"); }
-	|	SWITCH '(' expression ')' instruction				{ printf("Instruction SWITCH\n"); }
-	|	CASE CONSTANTE ':' instruction						{ printf("Instruction CASE %d\n", $2); }
-	|	DEFAULT ':' instruction								{ printf("Instruction DEFAULT\n"); }
+		IF '(' condition ')' instruction %prec THEN 	    { 
+			printf("Instruction IF\n");
+			$$ = nouveau_node(IF_NODE);
+			$$->if_node.instruction = $5;
+			$$->if_node.condition = $3;
+		}
+	|	IF '(' condition ')' instruction ELSE instruction	{ printf("Selection IF ... ELSE\n"); }
+	|	SWITCH '(' expression ')' instruction				{ printf("Selection SWITCH\n"); }
+	|	CASE CONSTANTE ':' instruction						{ printf("Selection CASE %d\n", $2); }
+	|	DEFAULT ':' instruction								{ printf("Selection DEFAULT\n"); }
 ;
 
 saut	:	
-		BREAK ';'	{ printf("Instruction BREAK\n"); }
-	|	RETURN ';'	{ printf("Instruction RETURN sans valeur\n"); }
-	|	RETURN expression ';'	{ printf("Instruction RETURN avec valeur %d\n", $2); }
+		BREAK ';'	{
+			// printf("Instruction BREAK\n"); 
+			$$ = nouveau_node(BREAK_NODE);
+		}
+	|	RETURN ';'	{
+			// printf("Instruction RETURN sans valeur\n"); 
+			$$ = nouveau_node(RETURN_NODE);
+	}
+	|	RETURN expression ';'	{
+			// printf("Instruction RETURN avec valeur %d\n", $2); 
+			$$ = nouveau_node(RETURN_NODE);
+	}
 ;
 
 affectation	:
 	expression	{ 
-		printf("Expression seule : %d\n", $1); 
+		//? je vois pas trop l'interet de faire ca
+		printf("Expression seule : %d\n", $1->expression.valeur); 
 	}
 	| 	variable '=' expression { 
+			printf("*/*/*/*/*/*/*/*/*/*/\n");
 			$$ = $1;
 			$1->symbole.isInitialized = 1; // on met la variable comme initialisée
-			$1->symbole.valeur = $3; // affectation de la valeur
-			printf("Affectation : %s = %d\n", $1->symbole.nom, 0);
+			if ($3->expression.evaluable == 1) {
+				$1->symbole.valeur = $3->expression.valeur; // on affecte la valeur de l'expression à la variable
+				$1->symbole.evaluable = 1; // on met la variable comme évaluable
+				printf("Affectation : %s = %d\n", $1->symbole.nom, $1->symbole.valeur);
+			} else {
+				$1->symbole.evaluable = 0; // on met la variable comme non évaluable
+				printf("Affectation : %s (non evaluable) \n", $1->symbole.nom);
+				afficher_node2("",$3);
+			}
+			printf("*//*/*/*/*/*/*/*/*/*/\n");
+
 			//! ATTENTION : IL FAUT EVALUER L'EXPRESSION
 		}
 ;
@@ -342,35 +407,114 @@ variable	:	// quand on utilise une variable
 		IDENTIFICATEUR { /*$$ = inserer($1);*/ //jpense pas qu'il faille utiliser ca ici
 			// il faut verif si ca existe déjà
 			// sinon on leve une erreur
-			Node *result = chercher_variable($1);
+			Node *result = chercher_symbole($1);
 			if (result == NULL) {
 				char *s = malloc( strlen("Variable utilisée mais jamais déclarée :") + strlen($1) + 1);
 				sprintf(s, "Variable utilisée mais jamais déclarée : %s", $1);
 				error(s); // -> kill
 			}
-			if (result->symbole.isInitialized == 0) {
-				char *s = malloc( strlen("Variable utilisée mais jamais initialisée :") + strlen($1) + 1);
-				sprintf(s, "Variable utilisée mais jamais initialisée : %s", $1);
-				// WARNING -------------- A FAIRE
-				// warning(s); // -> warning
+			if (result->type == SYMBOLE) {
+				// on verifie si la variable est initialisée
+				if (result->symbole.isInitialized == 0) {
+					char *s = malloc( strlen("Variable utilisée mais jamais initialisée :") + strlen($1) + 1);
+					sprintf(s, "Variable utilisée mais jamais initialisée : %s", $1);
+					warn(s); // -> warning
+					free(s);
+				}
+			} else if (result->type == FONCTION) {
+				yyerror("Fonction utilisée comme variable");
 			}
 
-			// sinon on renvoie la variable
 			$$ = result;
 		}
 	|	variable '[' expression ']'
 ;
 
-expression	:	
-		'(' expression ')' 			  { $$ = $2; printf("Expression entre parenthèses : %d\n", $2); }
-	| MOINS expression %prec MOINSUNAIRE { $$ = -$2; printf("Moins unaire : %d\n", -$2); }
-	| expression PLUS expression      { $$ = $1 + $3; printf("Somme : %d + %d = %d\n", $1, $3, $1 + $3); }
-    | expression MOINS expression     { $$ = $1 - $3; printf("Soustraction : %d - %d = %d\n", $1, $3, $1 - $3); }
-    | expression MUL expression       { $$ = $1 * $3; printf("Multiplication : %d * %d = %d\n", $1, $3, $1 * $3); }
-    | expression DIV expression       { $$ = $1 / $3;  printf("Division : %d / %d = %d\n", $1, $3, $1 / $3); }
-	| CONSTANTE              		  { $$ = $1;  printf("Constante : %d\n", $1); }
-	| variable 						  { $$ = $1->symbole.valeur; printf("Variable : %s = %d\n", $1->symbole.nom, $1->symbole.valeur); }
-	| IDENTIFICATEUR '(' liste_expressions ')' { printf("Appel fonction %s\n", $1); $$ = 0; }
+expression	:		
+		'(' expression ')' 			  			{ 
+			// $$ = $2; printf("Expression entre parenthèses : %d\n", $2); 
+			$$ = nouveau_node(EXPRESSION);
+			$$->expression.type = EXPRESSION_PARENTHESE;
+			$$->expression.expression = $2;
+			$$->expression.evaluable = $2->expression.evaluable;
+			$$->expression.valeur = $2->expression.valeur;
+
+			$$ = nouveau_node(TEST);
+			$$->test.txt = "Expression entre parenthèses";
+
+		}
+	| MOINS expression %prec MOINSUNAIRE 		{ 
+			// $$ = -$2; printf("Moins unaire : %d\n", -$2); 
+			$$ = nouveau_node(EXPRESSION);
+			$$->expression.type = EXPRESSION_MOINS_UNAIRE;
+			$$->expression.expression = $2;
+			if ($2->expression.evaluable) {
+				$$->expression.evaluable = 1;
+				$$->expression.valeur = -$2->expression.valeur;
+			} else {
+				$$->expression.evaluable = 0;
+			}
+		}
+	| expression PLUS expression      			{ 
+			// $$ = $1 + $3; printf("Somme : %d + %d = %d\n", $1, $3, $1 + $3); 
+			$$ = nouveau_node(EXPRESSION);
+			$$->expression.type = EXPRESSION_BINAIRE;
+			$$->expression.gauche = $1;
+			$$->expression.droite = $3;
+			$$->expression.operateur = strdup("+");
+			evaluer('+', $1, $3, &$$->expression.valeur, &$$->expression.evaluable);
+		}
+    | expression MOINS expression     			{ 
+			// $$ = $1 - $3; printf("Soustraction : %d - %d = %d\n", $1, $3, $1 - $3); 
+			$$ = nouveau_node(EXPRESSION);
+			$$->expression.type = EXPRESSION_BINAIRE;
+			$$->expression.gauche = $1;
+			$$->expression.droite = $3;
+			$$->expression.operateur = strdup("-");
+			evaluer('-', $1, $3, &$$->expression.valeur, &$$->expression.evaluable);
+		}
+    | expression MUL expression       			{ 
+			// $$ = $1 * $3; printf("Multiplication : %d * %d = %d\n", $1, $3, $1 * $3); 
+			$$ = nouveau_node(EXPRESSION);
+			$$->expression.type = EXPRESSION_BINAIRE;
+			$$->expression.gauche = $1;
+			$$->expression.droite = $3;
+			$$->expression.operateur = strdup("*");
+			evaluer('*', $1, $3, &$$->expression.valeur, &$$->expression.evaluable);
+
+		}
+    | expression DIV expression       			{ 
+			// $$ = $1 / $3;  printf("Division : %d / %d = %d\n", $1, $3, $1 / $3); 
+			$$ = nouveau_node(EXPRESSION);
+			$$->expression.type = EXPRESSION_BINAIRE;
+			$$->expression.gauche = $1;
+			$$->expression.droite = $3;
+			$$->expression.operateur = strdup("/");
+
+			if ($3->expression.valeur == 0) {
+				yyerror("Division par zéro");
+			}
+			evaluer('/', $1, $3, &$$->expression.valeur, &$$->expression.evaluable);
+		}
+	| CONSTANTE              		  			{ 
+			// $$ = $1;  printf("Constante : %d\n", $1); 
+			$$ = nouveau_node(EXPRESSION);
+			$$->expression.type = EXPRESSION_CONSTANTE;
+			$$->expression.valeur = $1;
+			$$->expression.evaluable = 1;
+		}
+	| variable 						  			{ 
+			// $$ = $1->symbole.valeur; printf("Variable : %s = %d\n", $1->symbole.nom, $1->symbole.valeur); 
+			$$ = $1;
+			printf("Variable : %s \n", $1->symbole.nom);
+
+		}
+	| IDENTIFICATEUR '(' liste_expressions ')' 	{ 
+			printf("EXPRESSION -- Appel fonction %s\n", $1); $$ = 0; 
+			$$ = nouveau_node(TEST);
+			$$->test.txt = "Appel fonction";
+
+		}
 ;
 
 liste_expressions	:	
@@ -381,9 +525,19 @@ liste_expressions	:
 
 condition	:	
 		NOT '(' condition ')' { printf("Condition NOT\n"); }
-	|	condition binary_rel condition %prec REL
+	|	condition binary_rel condition %prec REL 
 	|	'(' condition ')'  { printf("Condition\n"); }
-	|	expression binary_comp expression  { printf("Condition binaire\n"); }
+	|	expression binary_comp expression  { 
+			printf("Condition binaire\n");
+			$$ = nouveau_node(CONDITION_BINAIRE);
+			$$->condition_binaire.gauche = $1;
+			$$->condition_binaire.droite = $3;
+			$$->condition_binaire.operateur = $2;
+		
+			// $$->condition_binaire.droite = nouveau_node(TEST);
+			// $$->condition_binaire.droite->test.txt = "Condition binaire";
+			// printf("--------%d\n", $$->condition_binaire.droite->type);
+	}
 ;
 
 
@@ -394,14 +548,23 @@ binary_rel	:
 ;
 
 binary_comp	:	
-		LT
-	|	GT
-	|	GEQ
-	|	LEQ
-	|	EQ
-	|	NEQ
+		LT	{ $$ = strdup(yytext); }
+	|	GT	{ $$ = strdup(yytext); }
+	|	GEQ	{ $$ = strdup(yytext); }
+	|	LEQ	{ $$ = strdup(yytext); }
+	|	EQ	{ $$ = strdup(yytext); }
+	|	NEQ	{ $$ = strdup(yytext); }
 ;
 %%
+
+void warn(char *s) {
+	fprintf(stderr, COLOR_PURPLE);
+	fprintf(stderr, "Warning: ");
+	fprintf(stderr, RESET_COLOR);
+	fprintf(stderr, "%s\n", s);
+	fprintf(stderr, "Warning at line %d\n", yylineno);
+	fprintf(stderr, "Warning near: %s\n", yytext);
+}
 
 void yyerror(char *s) {
 	fprintf(stderr, COLOR_RED);
@@ -437,7 +600,6 @@ int main(int argc, char **argv) {
 		yyin = stdin;
 	}
     push_table(); // init table globale
-    init_fonction_table();
     yyparse();
     pop_table(); // nettoyage
 	yylex_destroy();
@@ -447,3 +609,22 @@ int main(int argc, char **argv) {
     return 0;
 }
 
+
+
+/*
+Node *result = chercher_variable($1);
+if (result == NULL) {
+	char *s = malloc( strlen("Variable utilisée mais jamais déclarée :") + strlen($1) + 1);
+	sprintf(s, "Variable utilisée mais jamais déclarée : %s", $1);
+	error(s); // -> kill
+}
+if (result->symbole.isInitialized == 0) {
+	char *s = malloc( strlen("Variable utilisée mais jamais initialisée :") + strlen($1) + 1);
+	sprintf(s, "Variable utilisée mais jamais initialisée : %s", $1);
+	printf("------WARNING : Variable utilisée mais jamais initialisée : %s\n", $1);
+	// WARNING -------------- A FAIRE
+	// warning(s); // -> warning
+}
+
+
+*/

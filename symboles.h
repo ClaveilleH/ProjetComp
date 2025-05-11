@@ -8,34 +8,52 @@
 typedef enum { ENTIER, VOID_TYPE } type_t;
 
 
-typedef struct symbole {
-    char *nom;
-    int valeur;
-    type_t type;
-    int taille;
-    int position;
-    struct symbole *suivant;
-} symbole;
-
-symbole *inserer(char *nom);
-// symbole *chercher(char *nom);
-void table_reset();
-
-typedef enum { SYMBOLE, FONCTION, PARAMETRE, } NodeType;
+typedef enum { 
+    SYMBOLE, FONCTION, PARAMETRE,
+    IF_NODE, BREAK_NODE, RETURN_NODE, 
+    CONDITION_BINAIRE, CONDITION_UNAIRE, CONDITION_NOT,
+    EXPRESSION,
+    TEST, 
+} NodeType;
 typedef struct NodeList NodeList; // declaration anticipée
-typedef struct Node {
+typedef struct Node Node; // declaration anticipée
+
+typedef enum { EXPRESSION_BINAIRE, EXPRESSION_MOINS_UNAIRE, EXPRESSION_PARENTHESE, EXPRESSION_CONSTANTE, } ExpressionType;
+typedef struct Node { //! est-ce qu'il faut pas faire des nodes pour les expressions separément ?
     NodeType type;
     union {
-        struct { char *nom; int valeur; type_t type; int taille; int position; int isInitialized; } symbole;
+        struct { char *nom; type_t type; int taille; int position; int isInitialized; int valeur; int evaluable; } symbole; // changer le nom
         struct { char *nom; type_t type; NodeList *liste_parametres; NodeList **table_declarations; NodeList *liste_instructions; } fonction;
         struct { char *nom; type_t type; } parametre;
-        
+
+        struct { Node *condition; Node *instruction; } if_node;
+        struct {} break_node;
+        struct {} return_node;
+
+        struct {Node *gauche; Node *droite; char *operateur; } condition_binaire;
+        struct {} condition_unaire;
+        struct {} condition_not;
+
+        struct { 
+            ExpressionType type;
+            int valeur; 
+            int evaluable;
+            char *operateur; // pour les expressions binaires
+            Node *gauche; // pour les expressions binaires
+            Node *droite; // pour les expressions binaires
+            Node *expression; 
+         } expression;
+
+        struct {} appel_fonction;
+
+        struct { char *txt; } test;
     };
 } Node;
 
 typedef struct NodeList {
     Node *node;
     struct NodeList *suivant;
+    struct NodeList *precedent; // pour les instructions, l'ordre est important
 } NodeList;
 
 typedef struct NodePile {
@@ -49,54 +67,22 @@ int append_node(NodeList *list, Node *node);
 NodeList **creer_node_table();
 
 int ajouter_variable(Node *node); // ajoute une variable à la table courante
-Node *chercher_variable(char *nom); // cherche une variable dans la table courante
- 
+int ajouter_parametre(Node *node); // ajoute un parametre à la table courante
+// Node *chercher_variable(char *nom); // cherche une variable dans la table courante
+// Node *chercher_variable_profondeur(char *nom); // cherche une variable dans la table courante et les tables parentes
+// Node *chercher_parametre_profondeur(char *nom); // cherche un parametre dans la table courante et les tables parentes 
+Node *chercher_symbole(char *nom); // cherche un symbole dans la table courante
+
 void affiche_node(Node *node);
+void afficher_node2(char *header, Node *node);
 void affiche_node_list(NodeList *nodeList);
 void afficher_node_table(NodeList **nodeList);
-typedef struct _param_t {
-    type_t type;
-    char *nom;
-} param_t;
+void afficher_instructions(NodeList *list);
 
-typedef struct _liste_t {
-    param_t param;
-    struct _liste_t *suivant;
-} liste_t;
-
-
-liste_t * creer_liste( param_t p );
-liste_t * concatener_listes( liste_t *l1, liste_t *l2 );
-void afficher_liste( liste_t *liste );
-
-//On gère à présent les fonctions
-// Ajouter après liste_t
-typedef struct _fonction_t {
-    type_t type;
-    char *nom;
-    liste_t *arguments;
-    struct _fonction_t *suivant;
-} fonction_t;
-
-fonction_t *ajouter_fonction(type_t type, char *nom, liste_t *args);
-void afficher_fonction(fonction_t *fonction);
-int listes_egales(liste_t *l1, liste_t *l2);
-void init_fonction_table();
-
-
-
-typedef struct table {
-    symbole *symboles;
-    struct table *suivant; // permet de chaîner les tables (pile)
-} table_t;
-
-extern table_t *pile_tables; // le sommet de la pile
+int evaluer(int operateur, Node *gauche, Node *droite, int *resultat, int *evaluable);
 
 void push_table();
 void pop_table();
-symbole *ajouter_symbole(char *nom, type_t type, int init);
-symbole *chercher_symbole(char *nom);
-
 
 
 // A ENLEVER

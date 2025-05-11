@@ -29,12 +29,22 @@ int main(){
 }
 
 
+int fact( int n ) {
+    if ( n <= 1 )
+        return 1;
+    return n*fact(n-1);
+}
 
 void main2(int abc, int aa) {
     int a;
     int b;
-    a = 10;
-    b = a;
+    int c;
+    a = 5 + 5;
+    if (a == 10) {
+        b = 10;
+    }
+    c = a + b;
+    return;
     // {
     //     int a;
     // }
