@@ -1,5 +1,9 @@
-comp.out
+*.out
 lex.yy.c
-fichiersProf/*.pdf
-fichiersProf/*.html
-fichiersProf/*.tgz
+y.tab.c
+y.tab.h
+*.o
+*.*.h
+output.dot
+y.output
+.vscode/
