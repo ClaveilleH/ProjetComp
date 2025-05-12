@@ -8,11 +8,10 @@
 
 //table de symboles pour un bloc (et permet des blocs imbriqués)
 
-NodePile *pile_variables = NULL; // le sommet de la pile de variables
-NodePile *pile_parametres = NULL; // le sommet de la pile de paramètres 
-NodePile *pile_fonctions = NULL; // le sommet de la pile de fonctions
-
-
+NodePile *pile_variables = NULL;    // le sommet de la pile de variables
+NodePile *pile_parametres = NULL;   // le sommet de la pile de paramètres 
+NodePile *pile_fonctions = NULL;    // le sommet de la pile de fonctions
+NodeList **table_fonctions = NULL; // table de fonctions
 
 
 int hash( char *nom ) {
@@ -111,6 +110,11 @@ int append_node(NodeList *list, Node *node) {
     }
     if (temp->node->type == PARAMETRE && node->type == PARAMETRE) { // si le type est PARAMETRE
         if (strcmp(temp->node->parametre.nom, node->parametre.nom) == 0) { // Vérifie si le nom est déjà présent
+            return 1; // Erreur d'ajout
+        }
+    }
+    if (temp->node->type == FONCTION && node->type == FONCTION) { // si le type est FONCTION
+        if (strcmp(temp->node->fonction.nom, node->fonction.nom) == 0) { // Vérifie si le nom est déjà présent
             return 1; // Erreur d'ajout
         }
     }
@@ -267,6 +271,40 @@ Node *chercher_parametre_profondeur(char *nom) {
     return chercher_parametre_profondeur_rec(nom, pile_parametres);
 }
 
+int ajouter_fonction(Node *node) {
+    // On ajoute le symbole à la table de fonctions
+    NodeList **courant = table_fonctions;
+    if (courant == NULL) {
+        table_fonctions = creer_node_table();
+        courant = table_fonctions;
+    }
+    int h = hash(node->fonction.nom);
+    if (courant[h] == NULL) {
+        courant[h] = nouveau_node_list(node);
+        return 0; // Ajout réussi
+    }
+    NodeList *temp = courant[h];
+    return append_node(temp, node); // retourne 0 si l'ajout a réussi, 1 sinon
+}
+
+
+Node *chercher_fonction(char *nom) {
+    int h = hash(nom);
+    NodeList **courant = table_fonctions;
+    if (courant == NULL) {
+        return NULL; // Pas de fonctions dans la table
+    }
+    NodeList *temp = courant[h];
+    while (temp != NULL) {
+        if (strcmp(temp->node->fonction.nom, nom) == 0) {
+            return temp->node; // Fonction trouvée
+        }
+        temp = temp->suivant;
+    }
+    return NULL; // Fonction non trouvée
+}
+
+
 Node *chercher_symbole(char *nom) {
     Node *var = chercher_variable_profondeur(nom);
     if (var != NULL) {
@@ -283,86 +321,17 @@ NodePile *get_pile() {
     return pile_variables;
 }
 
-void afficher_node2(char *header, Node *node) {
-    char *header2;
-    switch (node->type){
-        case SYMBOLE :
-            if (node->symbole.evaluable) {
-                printf("%s├── Symbole : %s = %d\n", header, node->symbole.nom, node->symbole.valeur);
-            } else {
-                printf("%s├── Symbole : %s (non évaluable)\n", header, node->symbole.nom);
-            }
-            // printf("%s├── Symbole : %s\n", header, node->symbole.nom);
-            break;
-        case FONCTION :
-            printf("%s├── Fonction t'es pas censé voir ça : %s\n", header, node->fonction.nom);
-            break;
-        case PARAMETRE :
-            printf("%s├── Parametre : %s\n", header, node->parametre.nom);
-            break;
-        case IF_NODE :
-            printf("%s├── If :\n", header);
-            header2 = malloc(strlen(header) + 10);
-            sprintf(header2, "%s│   ", header);
-            afficher_node2(header2, node->if_node.condition);
-            afficher_node2(header2, node->if_node.instruction);
-            free(header2);
-            break;
-        case BREAK_NODE :
-            printf("%s├── Break\n", header);
-            break;
-        case RETURN_NODE :
-            printf("%s├── Return\n", header);
-            break;
-        case CONDITION_BINAIRE :
-        // printf("aaaaaaa");
-            printf("%s├── Condition binaire : %s\n", header, node->condition_binaire.operateur);
-            header2 = malloc(strlen(header) + 10);
-            sprintf(header2, "%s│   ", header);
-            afficher_node2(header2, node->condition_binaire.gauche);
-            afficher_node2(header2, node->condition_binaire.droite);
-            free(header2);
-            break;
-        case EXPRESSION :
-            switch (node->expression.type) {
-                case EXPRESSION_BINAIRE :
-                    printf("%s├── Expression binaire : %s\n", header, node->expression.operateur);
-                    header2 = malloc(strlen(header) + 10);
-                    sprintf(header2, "%s│   ", header);
-                    afficher_node2(header2, node->expression.gauche);
-                    afficher_node2(header2, node->expression.droite);
-                    free(header2);
-                    break;
-                case EXPRESSION_MOINS_UNAIRE :
-                    printf("%s├── Expression not : %s\n", header, node->expression.operateur);
-                    header2 = malloc(strlen(header) + 10);
-                    sprintf(header2, "%s│   ", header);
-                    afficher_node2(header2, node->expression.expression);
-                    free(header2);
-                    break;
-                case EXPRESSION_PARENTHESE :
-                    printf("%s├── Expression entre parenthèses\n", header);
-                    header2 = malloc(strlen(header) + 10);
-                    sprintf(header2, "%s│   ", header);
-                    afficher_node2(header2, node->expression.expression);
-                    free(header2);
-                    break;
-                case EXPRESSION_CONSTANTE :
-                    printf("%s├── Constante : %d\n", header, node->expression.valeur);
-                    break;
-                default:
-                    printf("%sEXPRESSION NON DEFINI", header);
-            }
-            break;
-        case TEST :
-            printf("%s├── Test : %s\n", header, node->test.txt);
-            break;
-        default:
-            printf("%sNON DEFINI", header);
-            printf(" : %d\n", node->type);
-            break;
+void afficher_instructions2(char *header, NodeList *list) {
+    if (list == NULL) {
+        printf("Aucune instruction\n");
+        return;
+    }
+    while (list != NULL) {
+        afficher_node2(header, list->node);
+        list = list->suivant;
     }
 }
+
 
 
 void afficher_instructions(NodeList *list) {
@@ -440,4 +409,169 @@ int evaluer(int operateur, Node *gauche, Node *droite, int *resultat, int *evalu
     }
     *evaluable = 1;
     return 0; // Évaluation réussie
+}
+
+
+void afficher_node2(char *header, Node *node) {
+    char *header2;
+    switch (node->type){
+        case SYMBOLE :
+            if (node->symbole.evaluable) {
+                printf("%s├── Symbole : %s = %d\n", header, node->symbole.nom, node->symbole.valeur);
+            } else {
+                printf("%s├── Symbole : %s (non évaluable)\n", header, node->symbole.nom);
+            }
+            // printf("%s├── Symbole : %s\n", header, node->symbole.nom);
+            break;
+        case FONCTION :
+            printf("%s├── Fonction t'es pas censé voir ça : %s\n", header, node->fonction.nom);
+            break;
+        case PARAMETRE :
+            printf("%s├── Parametre : %s\n", header, node->parametre.nom);
+            break;
+        case IF_NODE :
+            printf("%s├── If :\n", header);
+            header2 = malloc(strlen(header) + 10);
+            sprintf(header2, "%s│   ", header);
+            afficher_node2(header2, node->if_node.condition);
+            afficher_node2(header2, node->if_node.instruction);
+            free(header2);
+            break;
+        case IF_ELSE_NODE :
+            printf("%s├── If :\n", header);
+            header2 = malloc(strlen(header) + 10);
+            sprintf(header2, "%s│   ", header);
+            afficher_node2(header2, node->if_else_node.condition);
+            afficher_node2(header2, node->if_else_node.instruction);
+            printf("%s├── Else :\n", header);
+            header2 = malloc(strlen(header) + 10);
+            sprintf(header2, "%s│   ", header);
+            afficher_node2(header2, node->if_else_node.instruction_else);
+            free(header2);
+            break;
+        
+        case SWITCH_NODE :
+            printf("%s├── Switch :\n", header);
+            header2 = malloc(strlen(header) + 10);
+            sprintf(header2, "%s│   ", header);
+            afficher_node2(header2, node->switch_node.expression);
+            afficher_node2(header2, node->switch_node.instruction);
+            free(header2);
+            break;
+        case CASE_NODE :
+            printf("%s├── Case :\n", header);
+            header2 = malloc(strlen(header) + 10);
+            sprintf(header2, "%s│   ", header);
+            afficher_node2(header2, node->case_node.constante);
+            afficher_node2(header2, node->case_node.instruction);
+            free(header2);
+            break;
+        case DEFAULT_NODE :
+            printf("%s├── Default :\n", header);
+            header2 = malloc(strlen(header) + 10);
+            sprintf(header2, "%s│   ", header);
+            afficher_node2(header2, node->default_node.instruction);
+            free(header2);
+            break;
+        case FOR_NODE :
+            printf("%s├── For :\n", header);
+            header2 = malloc(strlen(header) + 10);
+            sprintf(header2, "%s│   ", header);
+            afficher_node2(header2, node->for_node.init);
+            afficher_node2(header2, node->for_node.condition);
+            afficher_node2(header2, node->for_node.incr);
+            afficher_node2(header2, node->for_node.instruction);
+            free(header2);
+            break;
+        case WHILE_NODE :
+            printf("%s├── While :\n", header);
+            header2 = malloc(strlen(header) + 10);
+            sprintf(header2, "%s│   ", header);
+            afficher_node2(header2, node->while_node.condition);
+            afficher_node2(header2, node->while_node.instruction);
+            free(header2);
+            break;
+        case CONDITION_BINAIRE :
+        // printf("aaaaaaa");
+            printf("%s├── Condition binaire : %s\n", header, node->condition_binaire.operateur);
+            header2 = malloc(strlen(header) + 10);
+            sprintf(header2, "%s│   ", header);
+            afficher_node2(header2, node->condition_binaire.gauche);
+            afficher_node2(header2, node->condition_binaire.droite);
+            free(header2);
+            break;
+        case EXPRESSION :
+            switch (node->expression.type) {
+                case EXPRESSION_BINAIRE :
+                    printf("%s├── Expression binaire : %s\n", header, node->expression.operateur);
+                    header2 = malloc(strlen(header) + 10);
+                    sprintf(header2, "%s│   ", header);
+                    afficher_node2(header2, node->expression.gauche);
+                    afficher_node2(header2, node->expression.droite);
+                    free(header2);
+                    break;
+                case EXPRESSION_MOINS_UNAIRE :
+                    printf("%s├── Expression moins unaire :\n", header);
+                    header2 = malloc(strlen(header) + 10);
+                    sprintf(header2, "%s│   ", header);
+                    afficher_node2(header2, node->expression.expression);
+                    free(header2);
+                    break;
+                case EXPRESSION_PARENTHESE :
+                    printf("%s├── Expression entre parenthèses\n", header);
+                    header2 = malloc(strlen(header) + 10);
+                    sprintf(header2, "%s│   ", header);
+                    afficher_node2(header2, node->expression.expression);
+                    free(header2);
+                    break;
+                case EXPRESSION_CONSTANTE :
+                    printf("%s├── Constante : %d\n", header, node->expression.valeur);
+                    break;
+                default:
+                    printf("%sEXPRESSION NON DEFINI", header);
+            }
+            break;
+        case BREAK_NODE :
+            printf("%s├── Break\n", header);
+            break;
+        case RETURN_NODE :
+            if (node->return_node.expression != NULL) {
+                printf("%s├── Return :\n", header);
+                header2 = malloc(strlen(header) + 10);
+                sprintf(header2, "%s│   ", header);
+                afficher_node2(header2, node->return_node.expression);
+                free(header2);
+            } else {
+                printf("%s├── Return\n", header);
+            }
+            break;
+        case AFFECTATION :
+            printf("%s├── Affectation : %s\n", header, node->affectation.variable->symbole.nom);
+            header2 = malloc(strlen(header) + 10);
+            sprintf(header2, "%s│   ", header);
+            afficher_node2(header2, node->affectation.expression);
+            free(header2);
+            break;
+        case APPEL_FONCTION :
+            printf("%s├── Appel de fonction : %s\n", header, node->appel_fonction.nom);
+            header2 = malloc(strlen(header) + 10);
+            sprintf(header2, "%s│   ", header);
+            afficher_instructions2(header2, node->appel_fonction.liste_expressions);
+            free(header2);
+            break;
+        case BLOC :
+            printf("%s├── Bloc :\n", header);
+            header2 = malloc(strlen(header) + 10);
+            sprintf(header2, "%s│   ", header);
+            afficher_instructions2(header2, node->bloc.liste_instructions);
+            free(header2);
+            break;
+        case TEST :
+            printf("%s├── Test : %s\n", header, node->test.txt);
+            break;
+        default:
+            printf("%sNON DEFINI", header);
+            printf(" : %d\n", node->type);
+            break;
+    }
 }

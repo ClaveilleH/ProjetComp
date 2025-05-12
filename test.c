@@ -3,6 +3,14 @@ int z;
 // int a, a;
 // int x;
 
+
+int fact( int n ) {
+    if ( n <= 1 )
+        return 1;
+    return n*fact(n-1);
+}
+
+
 int main(){
     /*
     int a ;
@@ -25,23 +33,19 @@ int main(){
     int r ;
     */
     int x = 1;
-    return 0;
-}
-
-
-int fact( int n ) {
-    if ( n <= 1 )
-        return 1;
-    return n*fact(n-1);
+    return x;
 }
 
 void main2(int abc, int aa) {
     int a;
     int b;
     int c;
+    int d, f = 100; // j'ai pas trouvé comment initialiser la valeur de f
     a = 5 + 5;
     if (a == 10) {
         b = 10;
+    } else {
+        b = 20;
     }
     c = a + b;
     return;

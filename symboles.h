@@ -10,9 +10,15 @@ typedef enum { ENTIER, VOID_TYPE } type_t;
 
 typedef enum { 
     SYMBOLE, FONCTION, PARAMETRE,
-    IF_NODE, BREAK_NODE, RETURN_NODE, 
+    IF_NODE, IF_ELSE_NODE,
+    SWITCH_NODE, CASE_NODE, DEFAULT_NODE, 
+    FOR_NODE, WHILE_NODE,
     CONDITION_BINAIRE, CONDITION_UNAIRE, CONDITION_NOT,
+    BREAK_NODE, RETURN_NODE, 
     EXPRESSION,
+    AFFECTATION,
+    APPEL_FONCTION,
+    BLOC,
     TEST, 
 } NodeType;
 typedef struct NodeList NodeList; // declaration anticipée
@@ -23,17 +29,22 @@ typedef struct Node { //! est-ce qu'il faut pas faire des nodes pour les express
     NodeType type;
     union {
         struct { char *nom; type_t type; int taille; int position; int isInitialized; int valeur; int evaluable; } symbole; // changer le nom
-        struct { char *nom; type_t type; NodeList *liste_parametres; NodeList **table_declarations; NodeList *liste_instructions; } fonction;
+        struct { char *nom; type_t type; NodeList *liste_parametres; NodeList **table_declarations; NodeList *liste_instructions; int externe; } fonction;
         struct { char *nom; type_t type; } parametre;
 
         struct { Node *condition; Node *instruction; } if_node;
-        struct {} break_node;
-        struct {} return_node;
+        struct { Node *condition; Node *instruction; Node *instruction_else; } if_else_node;
+
+        struct { Node *expression; Node *instruction; } switch_node;
+        struct { Node *constante; Node *instruction; } case_node;
+        struct { Node *instruction; } default_node;
+
+        struct { Node *init; Node *condition; Node *incr; Node *instruction; } for_node;
+        struct { Node *condition; Node *instruction; } while_node;
 
         struct {Node *gauche; Node *droite; char *operateur; } condition_binaire;
         struct {} condition_unaire;
-        struct {} condition_not;
-
+        struct { Node *condition; } condition_not;
         struct { 
             ExpressionType type;
             int valeur; 
@@ -42,9 +53,17 @@ typedef struct Node { //! est-ce qu'il faut pas faire des nodes pour les express
             Node *gauche; // pour les expressions binaires
             Node *droite; // pour les expressions binaires
             Node *expression; 
-         } expression;
+        } expression;
 
-        struct {} appel_fonction;
+        
+        struct {} break_node;
+        struct { Node *expression; } return_node;
+
+        struct { Node *variable; Node *expression; } affectation;
+        
+        struct { char *nom; NodeList *liste_expressions; } appel_fonction;
+
+        struct { NodeList **table_declarations; NodeList *liste_instructions; } bloc;
 
         struct { char *txt; } test;
     };
@@ -68,9 +87,11 @@ NodeList **creer_node_table();
 
 int ajouter_variable(Node *node); // ajoute une variable à la table courante
 int ajouter_parametre(Node *node); // ajoute un parametre à la table courante
+int ajouter_fonction(Node *node); // ajoute une fonction à la table courante
 // Node *chercher_variable(char *nom); // cherche une variable dans la table courante
 // Node *chercher_variable_profondeur(char *nom); // cherche une variable dans la table courante et les tables parentes
 // Node *chercher_parametre_profondeur(char *nom); // cherche un parametre dans la table courante et les tables parentes 
+Node *chercher_fonction(char *nom); // cherche une fonction dans la table courante
 Node *chercher_symbole(char *nom); // cherche un symbole dans la table courante
 
 void affiche_node(Node *node);
