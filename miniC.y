@@ -4,7 +4,13 @@
 #include <string.h>
 
 #include "symboles.h"
+#include "genererDot.h"
 
+void ouvrir_graphe();
+void fermer_graphe();
+int generer_dot_node(Node *node);
+
+ 
 
 #define COLOR_RED "\033[31m"
 #define COLOR_PURPLE "\033[35m"
@@ -21,6 +27,7 @@ void warn(char *s);
 void yylex_destroy(void);
 
 FILE *file;
+
 
 NodeList *liste_fonctions = NULL; // liste globale des fonctions A SUPP
 Node *current_function = NULL; // fonction courante
@@ -75,7 +82,9 @@ Node *current_function = NULL; // fonction courante
 programme	:	
 		liste_declarations liste_fonctions {
 			// └
-			// printf("Programme complet\n");
+			printf("Programme complet\n");
+			ouvrir_graphe();	// ouverture du fichier dot 
+
 			printf("Programme :\n");
 			printf("├── Déclarations globales\n");
 			NodeList *tmp;
@@ -85,13 +94,19 @@ programme	:
 					while (tmp != NULL) {
 						// printf("│   ├── %s\n", tmp->node->symbole.nom);
 						afficher_node2("│   ├──", tmp->node);
+						// Génération du graphe pour chaque déclaration globale
+                    	generer_dot_node(tmp->node);
+
 						tmp = tmp->suivant;
 					}
 				}
 			}
 			printf("└── Fonctions :\n");
 			tmp = $2;
+			
+
 			while (tmp != NULL) {
+				generer_dot_node(tmp->node);
 				printf("    ├── %s\n", tmp->node->fonction.nom);
 				printf("    │	│\n");
 				printf("    │	├── Type : %s\n", tmp->node->fonction.type == ENTIER ? "int" : "void");
@@ -123,7 +138,14 @@ programme	:
 				printf("    │	└── Instructions :\n");
 				afficher_instructions(tmp->node->fonction.liste_instructions);
 				tmp = tmp->suivant;
+				
 			}
+		
+        fermer_graphe(); // fermeture fichier dot
+        printf(">> Graphe DOT généré avec succès.\n");
+
+
+
 		}
 ;
 
@@ -168,6 +190,7 @@ liste_fonctions	:
 				sprintf(s, "Redeclaration de la fonction : %s", $2->fonction.nom);
 				error(s);
 			}
+			$$ = $1;
 		}
 	|	fonction {
 			$$ = nouveau_node_list($1);
@@ -727,12 +750,15 @@ int main(int argc, char **argv) {
 		yyin = stdin;
 	}
     push_table(); // init table globale
+
     yyparse();
+
     pop_table(); // nettoyage
 	yylex_destroy();
 	if (file != NULL) {
 		fclose(file);
 	}
+	
     return 0;
 }
 
