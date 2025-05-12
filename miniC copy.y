@@ -148,7 +148,6 @@ liste_declarations	:
 					tmp = tmp->suivant;
 				}
 			}
-			// afficher_node_table($$);
 		}
 	| /* epsilon */ {printf("Liste de déclarations vide\n"); $$ = creer_node_table(); }
 ;
@@ -209,7 +208,6 @@ declarateur:
 fonction:
     type IDENTIFICATEUR '(' liste_parms ')' '{' {push_table();} // ouverture de bloc
 		liste_declarations liste_instructions '}' {
-			// affiche_node_list($4);
 			$$ = nouveau_node(FONCTION);
 			$$->fonction.nom = $2;
 			$$->fonction.type = $1;
@@ -418,8 +416,6 @@ bloc : '{' {
         }
         liste_declarations liste_instructions 
         '}' {
-			afficher_node_table(get_pile()->node);
-
             pop_table(); // fermeture de bloc
 			$$ = nouveau_node(BLOC);
 			$$->bloc.table_declarations = $3;

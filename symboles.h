@@ -84,21 +84,17 @@ Node *nouveau_node(NodeType type);
 NodeList *nouveau_node_list(Node *node);
 int append_node(NodeList *list, Node *node);
 NodeList **creer_node_table();
+Node *construire_expr_binaire(Node *gauche, Node *droite, char *op, char op2);
+Node *reduire_expression(Node *node);
 
 int ajouter_variable(Node *node); // ajoute une variable à la table courante
 int ajouter_parametre(Node *node); // ajoute un parametre à la table courante
 int ajouter_fonction(Node *node); // ajoute une fonction à la table courante
-// Node *chercher_variable(char *nom); // cherche une variable dans la table courante
-// Node *chercher_variable_profondeur(char *nom); // cherche une variable dans la table courante et les tables parentes
-// Node *chercher_parametre_profondeur(char *nom); // cherche un parametre dans la table courante et les tables parentes 
+
 Node *chercher_fonction(char *nom); // cherche une fonction dans la table courante
 Node *chercher_symbole(char *nom); // cherche un symbole dans la table courante
 
-void affiche_node(Node *node);
 void afficher_node2(char *header, Node *node);
-void affiche_node_list(NodeList *nodeList);
-void afficher_node_table(NodeList **nodeList);
-void afficher_instructions(NodeList *list);
 
 int evaluer(int operateur, Node *gauche, Node *droite, int *resultat, int *evaluable);
 

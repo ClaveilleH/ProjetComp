@@ -162,7 +162,6 @@ liste_declarations	:
 					tmp = tmp->suivant;
 				}
 			}
-			// afficher_node_table($$);
 		}
 	| /* epsilon */ {
 			// printf("Liste de déclarations vide\n"); 
@@ -254,7 +253,6 @@ ouverture_fonction:
 
 fonction:
     type IDENTIFICATEUR '(' liste_parms ')' ouverture_fonction bloc {
-			// affiche_node_list($4);
 			$$ = $6;
 			$$->fonction.type = $1;
 			$$->fonction.bloc = $7;
@@ -493,7 +491,6 @@ close_bloc :
 ;
 
 bloc : opn_bloc liste_declarations liste_instructions close_bloc {
-			// afficher_node_table(get_pile()->node);
 
 			$$ = nouveau_node(BLOC);
 			$$->bloc.table_declarations = $2;
@@ -552,82 +549,50 @@ expression	:
 		}
 	| expression PLUS expression      			{ 
 			// $$ = $1 + $3; printf("Somme : %d + %d = %d\n", $1, $3, $1 + $3); 
-			$$ = nouveau_node(EXPRESSION);
-			$$->expression.type = EXPRESSION_BINAIRE;
-			$$->expression.gauche = $1;
-			$$->expression.droite = $3;
-			$$->expression.operateur = strdup("+");
-			evaluer('+', $1, $3, &$$->expression.valeur, &$$->expression.evaluable);
+			$$ = construire_expr_binaire($1, $3, "+", '+');
+			$$ = reduire_expression($$);
 		}
     | expression MOINS expression     			{ 
 			// $$ = $1 - $3; printf("Soustraction : %d - %d = %d\n", $1, $3, $1 - $3); 
-			$$ = nouveau_node(EXPRESSION);
-			$$->expression.type = EXPRESSION_BINAIRE;
-			$$->expression.gauche = $1;
-			$$->expression.droite = $3;
-			$$->expression.operateur = strdup("-");
-			evaluer('-', $1, $3, &$$->expression.valeur, &$$->expression.evaluable);
+			$$ = construire_expr_binaire($1, $3, "-", '-');
+			$$ = reduire_expression($$);
 		}
     | expression MUL expression       			{ 
 			// $$ = $1 * $3; printf("Multiplication : %d * %d = %d\n", $1, $3, $1 * $3); 
-			$$ = nouveau_node(EXPRESSION);
-			$$->expression.type = EXPRESSION_BINAIRE;
-			$$->expression.gauche = $1;
-			$$->expression.droite = $3;
-			$$->expression.operateur = strdup("*");
-			evaluer('*', $1, $3, &$$->expression.valeur, &$$->expression.evaluable);
+			$$ = construire_expr_binaire($1, $3, "*", '*');
+			$$ = reduire_expression($$);
 
 		}
     | expression DIV expression       			{ 
 			// $$ = $1 / $3;  printf("Division : %d / %d = %d\n", $1, $3, $1 / $3); 
-			$$ = nouveau_node(EXPRESSION);
-			$$->expression.type = EXPRESSION_BINAIRE;
-			$$->expression.gauche = $1;
-			$$->expression.droite = $3;
-			$$->expression.operateur = strdup("/");
-
 			if ($3->expression.valeur == 0) {
 				warn("Division par zéro");
 			}
-			evaluer('/', $1, $3, &$$->expression.valeur, &$$->expression.evaluable);
+			$$ = construire_expr_binaire($1, $3, "/", '/');
+			$$ = reduire_expression($$);
 		}
 	|	expression LSHIFT expression 			{ 
 			// $$ = $1 << $3; printf("Décalage à gauche : %d << %d = %d\n", $1, $3, $1 << $3); 
-			$$ = nouveau_node(EXPRESSION);
-			$$->expression.type = EXPRESSION_BINAIRE;
-			$$->expression.gauche = $1;
-			$$->expression.droite = $3;
-			$$->expression.operateur = strdup("<<");
-			evaluer('l', $1, $3, &$$->expression.valeur, &$$->expression.evaluable);
-			// j'utilise 'l' parce que je peux pas utiliser '<<' 
+			$$ = construire_expr_binaire($1, $3, "<<", '<');
+			$$ = reduire_expression($$);
+			// j'utilise '<' parce que je peux pas utiliser '<<'
+			
 		}
 	| expression RSHIFT expression 			{ 
 			// $$ = $1 >> $3; printf("Décalage à droite : %d >> %d = %d\n", $1, $3, $1 >> $3); 
-			$$ = nouveau_node(EXPRESSION);
-			$$->expression.type = EXPRESSION_BINAIRE;
-			$$->expression.gauche = $1;
-			$$->expression.droite = $3;
-			$$->expression.operateur = strdup(">>");
-			evaluer('r', $1, $3, &$$->expression.valeur, &$$->expression.evaluable);
-			// j'utilise 'r' parce que je peux pas utiliser '>>'
+			$$ = construire_expr_binaire($1, $3, ">>", '>');
+			// j'utilise '>' parce que je peux pas utiliser '>>'
+			$$ = reduire_expression($$);
 		}
 	| expression BAND expression       			{ 
 			// $$ = $1 & $3; printf("Et binaire : %d & %d = %d\n", $1, $3, $1 & $3); 
-			$$ = nouveau_node(EXPRESSION);
-			$$->expression.type = EXPRESSION_BINAIRE;
-			$$->expression.gauche = $1;
-			$$->expression.droite = $3;
-			$$->expression.operateur = strdup("&");
-			evaluer('&', $1, $3, &$$->expression.valeur, &$$->expression.evaluable);
+			$$ = construire_expr_binaire($1, $3, "&", '&');
+			$$ = reduire_expression($$);
 		}
 	| expression BOR expression       			{ 
 			// $$ = $1 | $3; printf("Ou binaire : %d | %d = %d\n", $1, $3, $1 | $3); 
-			$$ = nouveau_node(EXPRESSION);
-			$$->expression.type = EXPRESSION_BINAIRE;
-			$$->expression.gauche = $1;
-			$$->expression.droite = $3;
-			$$->expression.operateur = strdup("|");
-			evaluer('|', $1, $3, &$$->expression.valeur, &$$->expression.evaluable);
+			$$ = construire_expr_binaire($1, $3, "|", '|');
+			$$ = reduire_expression($$);
 		}
 	| CONSTANTE              		  			{ 
 			// $$ = $1;  printf("Constante : %d\n", $1); 

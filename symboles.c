@@ -120,44 +120,15 @@ int append_node(NodeList *list, Node *node) {
     return 0; // Ajout réussi
 }
 
+Node *construire_expr_binaire(Node *gauche, Node *droite, char *op, char op2) {
+    Node *node = nouveau_node(EXPRESSION);
+    node->expression.type = EXPRESSION_BINAIRE;
+    node->expression.gauche = gauche;
+    node->expression.droite = droite;
+    node->expression.operateur = strdup(op);
+    evaluer(op2, gauche, droite, &node->expression.valeur, &node->expression.evaluable);
 
-
-void affiche_node(Node *node) {
-    if (node->type == SYMBOLE) {
-        printf("Nom: %s, Type: %s, Valeur: %d, Dimension: %d, Position: %d\n",
-               node->symbole.nom,
-               (node->symbole.type == ENTIER) ? "int" : "void",
-               123456789, //    node->symbole.valeur,
-               node->symbole.dimension,0);
-    }
-}
-
-void affiche_node_list(NodeList *nodeList) {
-    NodeList *temp = nodeList;
-    while (temp != NULL) {
-        affiche_node(temp->node);
-        temp = temp->suivant;
-    }
-}
-
-void afficher_node_table(NodeList **nodeList) {
-    if (nodeList == NULL) {
-        printf("Table vide\n");
-        return;
-    }
-    for (int i = 0; i < TAILLE; i++) {
-        if (nodeList[i] != NULL) {
-            printf("[%d]", i);
-            NodeList *temp = nodeList[i];
-            while (temp != NULL) {
-                if (temp->node->type == SYMBOLE) {
-                    printf(" -> %s", temp->node->symbole.nom);
-                }
-                temp = temp->suivant;
-            }
-            printf("\n");
-        }
-    }
+    return node;
 }
 
 int ajouter_variable(Node *node) {
@@ -330,20 +301,6 @@ void afficher_instructions2(char *header, NodeList *list) {
 }
 
 
-
-void afficher_instructions(NodeList *list) {
-    if (list == NULL) {
-        printf("Aucune instruction\n");
-        return;
-    }
-    char *header = "    │       ";
-    while (list != NULL) {
-        afficher_node2(header, list->node);
-        list = list->suivant;
-    }
-}
-
-
 int evaluer(int operateur, Node *gauche, Node *droite, int *resultat, int *evaluable) {
     int valeur_gauche = 0;
     int valeur_droite = 0;
@@ -406,10 +363,11 @@ int evaluer(int operateur, Node *gauche, Node *droite, int *resultat, int *evalu
         case '|':
             *resultat = valeur_gauche | valeur_droite;
             break;
-        case 'l':
+        case '<':
+            printf("aaaaaaaaaaaaaaaaaaaa\n");
             *resultat = valeur_gauche << valeur_droite;
             break;
-        case 'r':
+        case '>':
             *resultat = valeur_gauche >> valeur_droite;
             break;
         default:
@@ -420,6 +378,79 @@ int evaluer(int operateur, Node *gauche, Node *droite, int *resultat, int *evalu
     return 0; // Évaluation réussie
 }
 
+Node *reduire_expression(Node *node) {
+    if (node->type == EXPRESSION) {
+        if (node->expression.type == EXPRESSION_BINAIRE) {
+            node->expression.gauche = reduire_expression(node->expression.gauche);
+            node->expression.droite = reduire_expression(node->expression.droite);
+            if (node->expression.gauche->type == EXPRESSION && node->expression.droite->type == EXPRESSION) {
+                int resultat;
+                int evaluable;
+                if (evaluer(node->expression.operateur[0], node->expression.gauche, node->expression.droite, &resultat, &evaluable) == 0) {
+                    Node *nouveau = nouveau_node(EXPRESSION);
+                    nouveau->expression.type = EXPRESSION_CONSTANTE;
+                    nouveau->expression.valeur = resultat;
+                    nouveau->expression.evaluable = 1;
+                    free(node->expression.gauche);
+                    free(node->expression.droite);
+                    free(node->expression.operateur);
+                    free(node);
+                    return nouveau;
+                }
+                printf("Non evaluable 1\n");
+            }
+            if (node->expression.gauche->type == EXPRESSION && node->expression.droite->type == SYMBOLE) {
+                int resultat;
+                int evaluable;
+                if (evaluer(node->expression.operateur[0], node->expression.gauche, node->expression.droite, &resultat, &evaluable) == 0) {
+                    Node *nouveau = nouveau_node(EXPRESSION);
+                    nouveau->expression.type = EXPRESSION_CONSTANTE;
+                    nouveau->expression.valeur = resultat;
+                    nouveau->expression.evaluable = 1;
+                    free(node->expression.gauche);
+                    free(node->expression.operateur);
+                    free(node);
+                    return nouveau;
+                }
+                printf("Non evaluable 2\n");
+            }
+            if (node->expression.gauche->type == SYMBOLE && node->expression.droite->type == EXPRESSION) {
+                int resultat;
+                int evaluable;
+                if (evaluer(node->expression.operateur[0], node->expression.gauche, node->expression.droite, &resultat, &evaluable) == 0) {
+                    Node *nouveau = nouveau_node(EXPRESSION);
+                    nouveau->expression.type = EXPRESSION_CONSTANTE;
+                    nouveau->expression.valeur = resultat;
+                    nouveau->expression.evaluable = 1;
+                    free(node->expression.droite);
+                    free(node->expression.operateur);
+                    free(node);
+                    return nouveau;
+                }
+                printf("Non evaluable 3\n");
+            }
+            if (node->expression.gauche->type == SYMBOLE && node->expression.droite->type == SYMBOLE) {
+                int resultat;
+                int evaluable;
+                if (evaluer(node->expression.operateur[0], node->expression.gauche, node->expression.droite, &resultat, &evaluable) == 0) {
+                    Node *nouveau = nouveau_node(EXPRESSION);
+                    nouveau->expression.type = EXPRESSION_CONSTANTE;
+                    nouveau->expression.valeur = resultat;
+                    nouveau->expression.evaluable = 1;
+                    free(node->expression.operateur);
+                    free(node);
+                    return nouveau;
+                }
+                printf("Non evaluable 4\n");
+            }
+            printf("Non evaluable Type gauche : %d Type droite : %d\n", node->expression.gauche->type , node->expression.droite->type);
+            // Si l'évaluation échoue, on retourne l'expression d'origine
+            return node;
+        
+        }
+    }
+    return node;
+}
 
 void afficher_node2(char *header, Node *node) {
     char *header2;
@@ -512,7 +543,11 @@ void afficher_node2(char *header, Node *node) {
         case EXPRESSION :
             switch (node->expression.type) {
                 case EXPRESSION_BINAIRE :
-                    printf("%s├── Expression binaire : %s\n", header, node->expression.operateur);
+                    printf("%s├── Expression binaire : %s", header, node->expression.operateur);
+                    if (node->expression.evaluable) {
+                        printf("  (%d)", node->expression.valeur);
+                    }
+                    printf("\n");
                     header2 = malloc(strlen(header) + 10);
                     sprintf(header2, "%s│   ", header);
                     afficher_node2(header2, node->expression.gauche);
