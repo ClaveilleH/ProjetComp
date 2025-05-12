@@ -53,3 +53,12 @@ void main2(int abc, int aa) {
     //     int a;
     // }
 }
+
+
+int aa() {
+    int a;
+    int b;
+    a = 5 + 5;
+    b = 5 << 5;
+    return a + b;
+}

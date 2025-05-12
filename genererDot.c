@@ -151,24 +151,24 @@ int generer_dot_node(Node *node) {
             }
 
             // Déclarations locales
-            if (node->fonction.table_declarations) {
-                for (int i = 0; i < TAILLE; ++i) {
-                    NodeList *decl = node->fonction.table_declarations[i];
-                    while (decl) {
-                        int id_decl = generer_dot_node(decl->node);
-                        fleche(id, id_decl);
-                        decl = decl->suivant;
-                    }
-                }
-            }
+            // if (node->fonction.table_declarations) {
+            //     for (int i = 0; i < TAILLE; ++i) {
+            //         NodeList *decl = node->fonction.table_declarations[i];
+            //         while (decl) {
+            //             int id_decl = generer_dot_node(decl->node);
+            //             fleche(id, id_decl);
+            //             decl = decl->suivant;
+            //         }
+            //     }
+            // }
 
-            // Instructions
-            NodeList *instr = node->fonction.liste_instructions;
-            while (instr) {
-                int id_instr = generer_dot_node(instr->node);
-                fleche(id, id_instr);
-                instr = instr->suivant;
-            }
+            // // Instructions
+            // NodeList *instr = node->fonction.liste_instructions;
+            // while (instr) {
+            //     int id_instr = generer_dot_node(instr->node);
+            //     fleche(id, id_instr);
+            //     instr = instr->suivant;
+            // }
             break;
 
         default:

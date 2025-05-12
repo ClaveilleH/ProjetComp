@@ -123,7 +123,7 @@ programme	:
 					continue;
 				} 
 				printf(")\n");
-				afficher_node2("    │	└──", tmp->node->fonction.bloc);
+				afficher_node2("    │	", tmp->node->fonction.bloc);
 				tmp = tmp->suivant;
 				
 			}
@@ -212,26 +212,26 @@ declarateur:
 						
 			$$ = nouveau_node(SYMBOLE);
 			$$->symbole.nom = $1;
-			$$->symbole.type = ENTIER; //$<type>-2; // NE MARCHE PAS type transmis via $-2 (depuis 'type') (dans 'declaration')
+			$$->symbole.type = ENTIER;
 			$$->symbole.valeur = 0; // valeur initiale à 0 
 			$$->symbole.isInitialized = 0; // on met la variable comme non initialisée
 			$$->symbole.evaluable = 0; // on met la variable comme non évaluable
+			$$->symbole.dimension = 0; // dimension du tableau
+			// $$->symbole.taille = 0; // taille du tableau
+
 			// TODO: mettre un param .isInitialized à 0
 			
 			ajouter_variable($$); // on ajoute la variable à la table de symboles courante
 			//? mettre la verification ici ?
 		}
 	|	declarateur '[' CONSTANTE ']' {
-			// On crée un nouveau noeud pour la déclaration de tableau
-			// on verifie pas encore si la variable existe déjà
-			// printf("Déclaration de tableau : %s, type :%d\n", $1, $<type>-2);
-			// $$ = nouveau_node(SYMBOLE);
-			// $$->symbole.nom = $1;
-			// $$->symbole.type = ENTIER; //$<type>-2; // NE MARCHE PAS type transmis via $-2 (depuis 'type') (dans 'declaration')
-			// $$->symbole.valeur = 0; // valeur initiale à 0 
-			// $$->symbole.isInitialized = 0; // on met la variable comme non initialisée
-			// $$->symbole.evaluable = 0; // on met la variable comme non évaluable
-			// ajouter_variable($$); // on ajoute la variable à la table de symboles courante
+			// on modifie le noeud de la déclaration de variable
+			$$ = $1;
+			$$->symbole.type = TABLEAU;
+			$$->symbole.dimension += 1; // on incremente la dimension du tableau
+			// $$->symbole.taille = $3; // taille du tableau
+			//la taille ne sert a rien pour l'instant
+			// il faut faire une liste de tailles selon la dimension
 		}
 ;
 
@@ -590,6 +590,44 @@ expression	:
 				warn("Division par zéro");
 			}
 			evaluer('/', $1, $3, &$$->expression.valeur, &$$->expression.evaluable);
+		}
+	|	expression LSHIFT expression 			{ 
+			// $$ = $1 << $3; printf("Décalage à gauche : %d << %d = %d\n", $1, $3, $1 << $3); 
+			$$ = nouveau_node(EXPRESSION);
+			$$->expression.type = EXPRESSION_BINAIRE;
+			$$->expression.gauche = $1;
+			$$->expression.droite = $3;
+			$$->expression.operateur = strdup("<<");
+			evaluer('l', $1, $3, &$$->expression.valeur, &$$->expression.evaluable);
+			// j'utilise 'l' parce que je peux pas utiliser '<<' 
+		}
+	| expression RSHIFT expression 			{ 
+			// $$ = $1 >> $3; printf("Décalage à droite : %d >> %d = %d\n", $1, $3, $1 >> $3); 
+			$$ = nouveau_node(EXPRESSION);
+			$$->expression.type = EXPRESSION_BINAIRE;
+			$$->expression.gauche = $1;
+			$$->expression.droite = $3;
+			$$->expression.operateur = strdup(">>");
+			evaluer('r', $1, $3, &$$->expression.valeur, &$$->expression.evaluable);
+			// j'utilise 'r' parce que je peux pas utiliser '>>'
+		}
+	| expression BAND expression       			{ 
+			// $$ = $1 & $3; printf("Et binaire : %d & %d = %d\n", $1, $3, $1 & $3); 
+			$$ = nouveau_node(EXPRESSION);
+			$$->expression.type = EXPRESSION_BINAIRE;
+			$$->expression.gauche = $1;
+			$$->expression.droite = $3;
+			$$->expression.operateur = strdup("&");
+			evaluer('&', $1, $3, &$$->expression.valeur, &$$->expression.evaluable);
+		}
+	| expression BOR expression       			{ 
+			// $$ = $1 | $3; printf("Ou binaire : %d | %d = %d\n", $1, $3, $1 | $3); 
+			$$ = nouveau_node(EXPRESSION);
+			$$->expression.type = EXPRESSION_BINAIRE;
+			$$->expression.gauche = $1;
+			$$->expression.droite = $3;
+			$$->expression.operateur = strdup("|");
+			evaluer('|', $1, $3, &$$->expression.valeur, &$$->expression.evaluable);
 		}
 	| CONSTANTE              		  			{ 
 			// $$ = $1;  printf("Constante : %d\n", $1); 

@@ -5,7 +5,7 @@
 #define TAILLE 103  //nombre premier 
 
 
-typedef enum { ENTIER, VOID_TYPE } type_t;
+typedef enum { ENTIER, VOID_TYPE, TABLEAU, } type_t;
 
 
 typedef enum { 
@@ -28,7 +28,7 @@ typedef enum { EXPRESSION_BINAIRE, EXPRESSION_MOINS_UNAIRE, EXPRESSION_PARENTHES
 typedef struct Node { //! est-ce qu'il faut pas faire des nodes pour les expressions separément ?
     NodeType type;
     union {
-        struct { char *nom; type_t type; int taille; int position; int isInitialized; int valeur; int evaluable; } symbole; // changer le nom
+        struct { char *nom; type_t type; int dimension; int isInitialized; int valeur; int evaluable; } symbole; // changer le nom
         struct { char *nom; type_t type; NodeList *liste_parametres; Node *bloc; int externe; } fonction;
         struct { char *nom; type_t type; } parametre;
 

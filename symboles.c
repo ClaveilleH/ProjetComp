@@ -58,9 +58,7 @@ Node *nouveau_node(NodeType type) {
         node->symbole.nom = NULL;
         node->symbole.type = ENTIER;
         node->symbole.valeur = 0;
-        node->symbole.taille = 1;
-        node->symbole.position = 0;
-        // node->symbole.suivant = NULL;
+        node->symbole.dimension = 0;
     } else if (type == FONCTION) {
         node->fonction.nom = NULL;
         node->fonction.type = ENTIER;
@@ -126,12 +124,11 @@ int append_node(NodeList *list, Node *node) {
 
 void affiche_node(Node *node) {
     if (node->type == SYMBOLE) {
-        printf("Nom: %s, Type: %s, Valeur: %d, Taille: %d, Position: %d\n",
+        printf("Nom: %s, Type: %s, Valeur: %d, Dimension: %d, Position: %d\n",
                node->symbole.nom,
                (node->symbole.type == ENTIER) ? "int" : "void",
                123456789, //    node->symbole.valeur,
-               node->symbole.taille,
-               node->symbole.position);
+               node->symbole.dimension,0);
     }
 }
 
@@ -403,6 +400,18 @@ int evaluer(int operateur, Node *gauche, Node *droite, int *resultat, int *evalu
             }
             *resultat = valeur_gauche / valeur_droite;
             break;
+        case '&':
+            *resultat = valeur_gauche & valeur_droite;
+            break;
+        case '|':
+            *resultat = valeur_gauche | valeur_droite;
+            break;
+        case 'l':
+            *resultat = valeur_gauche << valeur_droite;
+            break;
+        case 'r':
+            *resultat = valeur_gauche >> valeur_droite;
+            break;
         default:
             *evaluable = 0;
             return 1; // Erreur d'évaluation
@@ -560,11 +569,28 @@ void afficher_node2(char *header, Node *node) {
             free(header2);
             break;
         case BLOC :
+            char *header3;
             printf("%s├── Bloc :\n", header);
             header2 = malloc(strlen(header) + 10);
             sprintf(header2, "%s│   ", header);
+            header3 = malloc(strlen(header) + 10);
+            sprintf(header3, "%s│   ", header2);
+            printf("%s├── Déclarations :\n", header2);
+            
+            NodeList **table_declarations = node->bloc.table_declarations;
+            for (int i = 0; i < TAILLE; i++) {
+                if (table_declarations[i] != NULL) {
+                    NodeList *temp = table_declarations[i];
+                    while (temp != NULL) {
+                        afficher_node2(header3, temp->node);
+                        temp = temp->suivant;
+                    }
+                }
+            }
+            printf("%s├── Instructions :\n", header2);
             afficher_instructions2(header2, node->bloc.liste_instructions);
             free(header2);
+            free(header3);
             break;
         case TEST :
             printf("%s├── Test : %s\n", header, node->test.txt);
