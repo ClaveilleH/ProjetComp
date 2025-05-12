@@ -29,7 +29,7 @@ typedef struct Node { //! est-ce qu'il faut pas faire des nodes pour les express
     NodeType type;
     union {
         struct { char *nom; type_t type; int taille; int position; int isInitialized; int valeur; int evaluable; } symbole; // changer le nom
-        struct { char *nom; type_t type; NodeList *liste_parametres; NodeList **table_declarations; NodeList *liste_instructions; int externe; } fonction;
+        struct { char *nom; type_t type; NodeList *liste_parametres; Node *bloc; int externe; } fonction;
         struct { char *nom; type_t type; } parametre;
 
         struct { Node *condition; Node *instruction; } if_node;

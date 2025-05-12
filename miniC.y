@@ -123,20 +123,7 @@ programme	:
 					continue;
 				} 
 				printf(")\n");
-				printf("    │	├── Déclarations :\n");
-				NodeList **tmp3 = tmp->node->fonction.table_declarations;
-				for (int i = 0; i < TAILLE; i++) {
-					if (tmp3[i] != NULL) {
-						tmp2 = tmp3[i];
-						while (tmp2 != NULL) {
-							afficher_node2("    │	│   ", tmp2->node);
-							tmp2 = tmp2->suivant;
-						}
-					}
-				}
-				printf("    │	│\n");
-				printf("    │	└── Instructions :\n");
-				afficher_instructions(tmp->node->fonction.liste_instructions);
+				afficher_node2("    │	└──", tmp->node->fonction.bloc);
 				tmp = tmp->suivant;
 				
 			}
@@ -234,17 +221,17 @@ declarateur:
 			ajouter_variable($$); // on ajoute la variable à la table de symboles courante
 			//? mettre la verification ici ?
 		}
-	|	declarateur '[' expression ']' {
+	|	declarateur '[' CONSTANTE ']' {
 			// On crée un nouveau noeud pour la déclaration de tableau
 			// on verifie pas encore si la variable existe déjà
 			// printf("Déclaration de tableau : %s, type :%d\n", $1, $<type>-2);
-			$$ = nouveau_node(SYMBOLE);
-			$$->symbole.nom = $1;
-			$$->symbole.type = ENTIER; //$<type>-2; // NE MARCHE PAS type transmis via $-2 (depuis 'type') (dans 'declaration')
-			$$->symbole.valeur = 0; // valeur initiale à 0 
-			$$->symbole.isInitialized = 0; // on met la variable comme non initialisée
-			$$->symbole.evaluable = 0; // on met la variable comme non évaluable
-			ajouter_variable($$); // on ajoute la variable à la table de symboles courante
+			// $$ = nouveau_node(SYMBOLE);
+			// $$->symbole.nom = $1;
+			// $$->symbole.type = ENTIER; //$<type>-2; // NE MARCHE PAS type transmis via $-2 (depuis 'type') (dans 'declaration')
+			// $$->symbole.valeur = 0; // valeur initiale à 0 
+			// $$->symbole.isInitialized = 0; // on met la variable comme non initialisée
+			// $$->symbole.evaluable = 0; // on met la variable comme non évaluable
+			// ajouter_variable($$); // on ajoute la variable à la table de symboles courante
 		}
 ;
 
@@ -258,8 +245,7 @@ ouverture_fonction:
 		$$->fonction.nom = $<chaine>-2;
 		$$->fonction.type = $<type>-4;
 		$$->fonction.liste_parametres = $<node_list>-1;
-		$$->fonction.table_declarations = NULL;
-		$$->fonction.liste_instructions = NULL;
+		$$->fonction.bloc = NULL;
 		$$->fonction.externe = 0; // on met la fonction comme interne
 		ajouter_fonction($$); // on ajoute la fonction à la table de symboles courante
 		current_function = $$; // on met la fonction courante
@@ -267,15 +253,13 @@ ouverture_fonction:
 
 
 fonction:
-    type IDENTIFICATEUR '(' liste_parms ')' ouverture_fonction '{' liste_declarations liste_instructions '}' {
+    type IDENTIFICATEUR '(' liste_parms ')' ouverture_fonction bloc {
 			// affiche_node_list($4);
 			$$ = $6;
 			$$->fonction.type = $1;
-			$$->fonction.table_declarations = $8;
-			$$->fonction.liste_instructions = $9;
+			$$->fonction.bloc = $7;
 
 			// on verifie si la fonction a un return
-			NodeList *tmp = $9;
 			
 
 			append_node(liste_fonctions, $$);
@@ -288,8 +272,7 @@ fonction:
 			$$->fonction.nom = $3;
 			$$->fonction.type = $2;
 			$$->fonction.liste_parametres = $5;
-			$$->fonction.table_declarations = NULL;
-			$$->fonction.liste_instructions = NULL;
+			$$->fonction.bloc = NULL;
 			$$->fonction.externe = 1; // on met la fonction comme externe
 
 			append_node(liste_fonctions, $$); //! VERIFIER L'UTILITÉ
