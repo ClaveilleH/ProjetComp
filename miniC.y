@@ -14,7 +14,9 @@ int generer_dot_node(Node *node);
 
 #define COLOR_RED "\033[31m"
 #define COLOR_PURPLE "\033[35m"
+#define COLOR_GREEN "\033[32m"
 #define RESET_COLOR "\033[0m"
+#define DEBUG 1
 
 extern int yylineno;
 extern char *yytext;
@@ -85,15 +87,15 @@ programme	:
 			printf("Programme complet\n");
 			ouvrir_graphe();	// ouverture du fichier dot 
 
-			printf("Programme :\n");
-			printf("├── Déclarations globales\n");
+			if (DEBUG) printf("Programme :\n");
+			if (DEBUG) printf("├── Déclarations globales\n");
 			NodeList *tmp;
 			for (int i = 0; i < TAILLE; i++) {
 				if ($1[i] != NULL) {
 					tmp = $1[i];
 					while (tmp != NULL) {
 						// printf("│   ├── %s\n", tmp->node->symbole.nom);
-						afficher_node2("│   ├──", tmp->node);
+						if (DEBUG) afficher_node2("│   ├──", tmp->node);
 						// Génération du graphe pour chaque déclaration globale
                     	generer_dot_node(tmp->node);
 
@@ -101,38 +103,42 @@ programme	:
 					}
 				}
 			}
-			printf("└── Fonctions :\n");
+			if (DEBUG) printf("└── Fonctions :\n");
 			tmp = $2;
 			
 
 			while (tmp != NULL) {
 				generer_dot_node(tmp->node);
-				printf("    ├── %s\n", tmp->node->fonction.nom);
-				printf("    │	│\n");
-				printf("    │	├── Type : %s\n", tmp->node->fonction.type == ENTIER ? "int" : "void");
+				if (DEBUG) printf("    ├── %s\n", tmp->node->fonction.nom);
+				if (DEBUG) printf("    │	│\n");
+				if (DEBUG) printf("    │	├── Type : %s\n", tmp->node->fonction.type == ENTIER ? "int" : "void");
 				NodeList *tmp2 = tmp->node->fonction.liste_parametres;
-				printf("    │	├── Paramètres : (");
+				if (DEBUG) printf("    │	├── Paramètres : (");
 				while (tmp2 != NULL) {
-					printf("%s, ", tmp2->node->parametre.nom);
+					if (DEBUG) printf("%s, ", tmp2->node->parametre.nom);
 					tmp2 = tmp2->suivant;
 				}
 				if (tmp->node->fonction.externe) {
-					printf(") EXTERNE\n");
+					if (DEBUG) printf(") EXTERNE\n");
 					tmp = tmp->suivant;
 
 					continue;
 				} 
-				printf(")\n");
-				afficher_node2("    │	", tmp->node->fonction.bloc);
+				if (DEBUG) printf(")\n");
+				if (DEBUG) afficher_node2("    │	", tmp->node->fonction.bloc);
 				tmp = tmp->suivant;
 				
 			}
 		
         fermer_graphe(); // fermeture fichier dot
         printf(">> Graphe DOT généré avec succès.\n");
-
-
-
+		// free_liste(liste_fonctions); // on libère la liste de fonctions
+		// free_list($1); // on libère la liste de déclarations
+		// free_list($2); // on libère la liste de fonctions
+		// free_all(); // on libère la table de symboles
+		
+		free_table($1);
+		free_list($2);
 		}
 ;
 
@@ -166,6 +172,7 @@ liste_declarations	:
 	| /* epsilon */ {
 			// printf("Liste de déclarations vide\n"); 
 			$$ = creer_node_table(); 
+			// printf("Table de symboles initialisée\n");
 		}
 ;
 
@@ -180,6 +187,8 @@ liste_fonctions	:
 		}
 	|	fonction {
 			$$ = nouveau_node_list($1);
+			printf(COLOR_GREEN "1 : Node LIST %d\n" RESET_COLOR, $$->id);
+				
 		}
 ;
 
@@ -195,11 +204,11 @@ liste_declarateurs	:
 		liste_declarateurs ',' declarateur {
 			// on ajoute declarateur au début de la liste
 			// on verifie pas encore si la variable existe déjà
-			$$ = nouveau_node_list($3);
-			$$->suivant = $1;
+			append_node($1, $3);
 		}
 	|	declarateur {
 		$$ = nouveau_node_list($1);
+		printf(COLOR_GREEN "2 : Node LIST %d\n" RESET_COLOR, $$->id);
 	}
 ;
 
@@ -288,6 +297,7 @@ type: VOID { $$ = VOID_TYPE; }
 liste_parms	:	
 		parm	{
 			$$ = nouveau_node_list($1);
+			printf(COLOR_GREEN "3 : Node LIST %d\n" RESET_COLOR, $$->id);
 			// printf("-----Paramètre : int %s\n", $1->parametre.nom);
 		}
 	|	liste_parms ',' parm	{
@@ -315,12 +325,14 @@ liste_instructions :
 			// on verifie pas encore si la variable existe déjà
 			if ($1 == NULL) {
 				$$ = nouveau_node_list($2);
+				printf(COLOR_GREEN "4 : Node LIST %d\n" RESET_COLOR, $$->id);
 				
 			} else {
 				// on ajoute instruction au début de la liste
 				// on verifie pas encore si la variable existe déjà
 				$$ = $1;
 				NodeList *nouv = nouveau_node_list($2);
+				printf(COLOR_GREEN "5 : Node LIST %d\n" RESET_COLOR, $$->id);
 				nouv->suivant = NULL; // pour pas faire une boucle
 				
 				if ($$->suivant == NULL) {
@@ -335,14 +347,6 @@ liste_instructions :
 
 				}
 			}
-			// $$ = $1;
-			// NodeList *nouv = nouveau_node_list($2);
-			
-			// nouv->suivant = $$->precedent;
-			// nouv->suivant->precedent = nouv;
-			// $$->precedent = nouv;
-			// nouv->precedent = $$;
-			// printf("Liste d'instructions : \n");
 		}
 	|   /* epsilon */ { 
 			// printf("Liste d'instructions vide\n"); 
@@ -490,11 +494,14 @@ close_bloc :
 		}
 ;
 
-bloc : opn_bloc liste_declarations liste_instructions close_bloc {
-
+bloc : 
+	opn_bloc liste_declarations liste_instructions close_bloc {
 			$$ = nouveau_node(BLOC);
 			$$->bloc.table_declarations = $2;
 			$$->bloc.liste_instructions = $3;
+			// printf(COLOR_GREEN);
+			// printf("Bloc :\n");
+			// printf(RESET_COLOR);
         }
 ;
 
@@ -505,17 +512,26 @@ variable	:	// quand on utilise une variable
 			// sinon on leve une erreur
 			Node *result = chercher_symbole($1);
 			if (result == NULL) {
-				char *s = malloc( strlen("Variable utilisée mais jamais déclarée :") + strlen($1) + 1);
-				sprintf(s, "Variable utilisée mais jamais déclarée : %s", $1);
-				error(s); // -> kill
+				size_t alloc_len = strlen("Variable utilisée mais jamais déclarée :") + strlen($1) + 10; // Ajoutez une marge de sécurité
+				char *s = malloc(alloc_len);
+				if (s == NULL) {
+					fprintf(stderr, "Erreur : allocation mémoire échouée\n");
+					exit(EXIT_FAILURE);
+				}
+				snprintf(s, alloc_len, "Variable utilisée mais jamais déclarée : %s", $1);
+				error(s); // Appel de la fonction error
 			}
 			if (result->type == SYMBOLE) {
 				// on verifie si la variable est initialisée
 				if (result->symbole.isInitialized == 0) {
-					char *s = malloc( strlen("Variable utilisée mais jamais initialisée :") + strlen($1) + 1);
-					sprintf(s, "Variable utilisée mais jamais initialisée : %s", $1);
-					warn(s); // -> warning
-					free(s);
+					size_t alloc_len = strlen("Variable utilisée mais jamais initialisée :") + strlen($1) + 10; // Ajoutez une marge de sécurité
+					char *s = malloc(alloc_len);
+					if (s == NULL) {
+						fprintf(stderr, "Erreur : allocation mémoire échouée\n");
+						exit(EXIT_FAILURE);
+					}
+					snprintf(s, alloc_len, "Variable utilisée mais jamais initialisée : %s", $1);
+					warn(s); // Appel de la fonction warn
 				}
 			} else if (result->type == FONCTION) {
 				yyerror("Fonction utilisée comme variable");
@@ -649,6 +665,7 @@ liste_expressions	:
 	|	expression { 
 			// printf("Expression unique \n");
 			$$ = nouveau_node_list($1);
+			printf(COLOR_GREEN "6 : Node LIST %d\n" RESET_COLOR, $$->id);
 	}
 	|	/* epsilon */ { 
 			// printf("Liste d'expressions vide\n");
@@ -740,6 +757,7 @@ int main(int argc, char **argv) {
     yyparse();
 
     pop_table(); // nettoyage
+	free_all(); // nettoyage
 	yylex_destroy();
 	if (file != NULL) {
 		fclose(file);

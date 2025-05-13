@@ -1,6 +1,5 @@
 digraph G {
-node0 [label="a" shape=ellipse color=black];
-node1 [label="main, int" shape=invtrapezium color=blue];
-node2 [label="BLOC" shape=ellipse color=black];
-node1 -> node2;
+node0 [label="main, int" shape=invtrapezium color=blue];
+node1 [label="BLOC" shape=ellipse color=black];
+node0 -> node1;
 }

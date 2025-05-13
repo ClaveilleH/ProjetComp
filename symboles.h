@@ -27,6 +27,7 @@ typedef struct Node Node; // declaration anticipée
 typedef enum { EXPRESSION_BINAIRE, EXPRESSION_MOINS_UNAIRE, EXPRESSION_PARENTHESE, EXPRESSION_CONSTANTE, } ExpressionType;
 typedef struct Node { //! est-ce qu'il faut pas faire des nodes pour les expressions separément ?
     NodeType type;
+    int id; // id du noeud pour le debug
     union {
         struct { char *nom; type_t type; int dimension; int isInitialized; int valeur; int evaluable; } symbole; // changer le nom
         struct { char *nom; type_t type; NodeList *liste_parametres; Node *bloc; int externe; } fonction;
@@ -70,12 +71,14 @@ typedef struct Node { //! est-ce qu'il faut pas faire des nodes pour les express
 } Node;
 
 typedef struct NodeList {
+    int id; // id du noeud pour le debug
     Node *node;
     struct NodeList *suivant;
     struct NodeList *precedent; // pour les instructions, l'ordre est important
 } NodeList;
 
 typedef struct NodePile {
+    int id; // id du noeud pour le debug
     NodeList **node; // tableau de listes chaînées TODO: changer le nom
     struct NodePile *suivant;
 } NodePile;
@@ -100,6 +103,10 @@ int evaluer(int operateur, Node *gauche, Node *droite, int *resultat, int *evalu
 
 void push_table();
 void pop_table();
+void free_node(Node* node);
+void free_list(NodeList *list);
+void free_table(NodeList **table);
+void free_all();
 
 
 // A ENLEVER
