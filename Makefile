@@ -2,15 +2,14 @@
 CC = gcc
 
 # Source files
-NAME = 3
 LEX_SRC = main.l
 YACC_SRC = miniC.y
-FUNC_SRC = functions.c
+C_SOURCES = symboles.c genererDot.c
 
 # Generated files
 LEX_GEN = lex.yy.c
-YACC_GEN = y.tab.c y.tab.h
-
+YACC_GEN = y.tab.c
+YACC_HEADER = y.tab.h
 
 # Output executable
 TARGET = comp.out
@@ -18,17 +17,18 @@ TARGET = comp.out
 # Default target
 all: $(TARGET)
 
-# Generate the C source files from lex and yacc
+# Generate lexer source from lex
 $(LEX_GEN): $(LEX_SRC)
 	lex $(LEX_SRC)
 
-$(YACC_GEN): $(YACC_SRC)
-	yacc -d $(YACC_SRC)
+# Generate parser source and header from yacc
+$(YACC_GEN) $(YACC_HEADER): $(YACC_SRC)
+	yacc -d -v $(YACC_SRC)
 
-# Link the object files to create the executable
-$(TARGET): $(LEX_GEN) $(YACC_GEN) $(FUNC_SRC)
-	$(CC) -o $(TARGET) $(FUNC_SRC) lex.yy.c y.tab.c -lfl
+# Build the final executable
+$(TARGET): $(LEX_GEN) $(YACC_GEN) $(C_SOURCES)
+	$(CC) -o $(TARGET) $(LEX_GEN) $(YACC_GEN) $(C_SOURCES) -lfl
 
-# Clean up build files
+# Clean up generated and built files
 clean:
-	rm -f $(TARGET) $(LEX_GEN) $(YACC_GEN)  y.tab.h
+	rm -f $(TARGET) $(LEX_GEN) $(YACC_GEN) $(YACC_HEADER) y.output

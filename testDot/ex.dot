@@ -1,8 +1,0 @@
-digraph mon_graphe {
-    // Ceci est un commentaire
-    a -> b -> c;
-    b -> d;
-}
-
-//dot -Tpdf ex.dot -o ex.pdf
-//ext install EFanZh.graphviz-preview
