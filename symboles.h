@@ -90,6 +90,7 @@ NodeList **creer_node_table();
 Node *construire_expr_binaire(Node *gauche, Node *droite, char *op, char op2);
 Node *reduire_expression(Node *node);
 
+
 int ajouter_variable(Node *node); // ajoute une variable à la table courante
 int ajouter_parametre(Node *node); // ajoute un parametre à la table courante
 int ajouter_fonction(Node *node); // ajoute une fonction à la table courante

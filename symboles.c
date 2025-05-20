@@ -105,7 +105,7 @@ int hash( char *nom ) {
 void push_table() {
     NodePile *nouvelle_pile = malloc(sizeof(NodePile));
     nouvelle_pile->id = malloc_count;
-    printf("malloc pile id: %d\n", malloc_count++);
+    // printf("malloc pile id: %d\n", malloc_count++);
 
     nouvelle_pile->node = NULL;
     nouvelle_pile->suivant = pile_variables;
@@ -113,7 +113,7 @@ void push_table() {
 
     nouvelle_pile = malloc(sizeof(NodePile));
     nouvelle_pile->id = malloc_count;
-    printf("malloc pile id: %d\n", malloc_count++);
+    // printf("malloc pile id: %d\n", malloc_count++);
     nouvelle_pile->node = NULL;
     nouvelle_pile->suivant = pile_parametres;
     pile_parametres = nouvelle_pile;
@@ -136,7 +136,7 @@ void pop_table() {
 Node *nouveau_node(NodeType type) {
     Node *node = malloc(sizeof(Node));
     node->id = malloc_count;
-    printf("malloc node id: %d\n", malloc_count++);
+    // printf("malloc node id: %d\n", malloc_count++);
     assert(node != NULL);
     node->type = type;
     if (type == SYMBOLE) {
@@ -157,7 +157,7 @@ Node *nouveau_node(NodeType type) {
 NodeList *nouveau_node_list(Node *node) {
     NodeList *nodeList = malloc(sizeof(NodeList));
     nodeList->id = malloc_count;
-    printf("malloc nodeList id: %d\n", malloc_count++);
+    // printf("malloc nodeList id: %d\n", malloc_count++);
     assert(nodeList != NULL);
     nodeList->node = node;
     nodeList->suivant = NULL;
@@ -167,7 +167,7 @@ NodeList *nouveau_node_list(Node *node) {
 
 NodeList **creer_node_table() {
     NodeList **nodeList = malloc(TAILLE * sizeof(NodeList *));
-    printf("malloc nodeList table id: %d\n", malloc_count++);
+    // printf("malloc nodeList table id: %d\n", malloc_count++);
     assert(nodeList != NULL);
     for (int i = 0; i < TAILLE; i++) {
         nodeList[i] = NULL;
@@ -179,7 +179,7 @@ int append_node(NodeList *list, Node *node) {
     // Ajoute l2 à la fin de l1
     if (list == NULL) {
         list = nouveau_node_list(node);
-        printf(COLOR_GREEN "7 : Node LIST %d\n" RESET_COLOR, list->id);
+        // printf(COLOR_GREEN "7 : Node LIST %d\n" RESET_COLOR, list->id);
         return 0; // Ajout réussi
     }
     NodeList *temp = list;
@@ -207,7 +207,7 @@ int append_node(NodeList *list, Node *node) {
         }
     }
     temp->suivant = nouveau_node_list(node);
-        printf(COLOR_GREEN "8 : Node LIST %d\n" RESET_COLOR, temp->suivant->id);
+        // printf(COLOR_GREEN "8 : Node LIST %d\n" RESET_COLOR, temp->suivant->id);
         return 0; // Ajout réussi
 }
 
@@ -233,7 +233,7 @@ int ajouter_variable(Node *node) {
     int h = hash(node->symbole.nom);
     if (courant[h] == NULL) {
         courant[h] = nouveau_node_list(node);
-        printf(COLOR_GREEN "9 : Node LIST %d\n" RESET_COLOR, courant[h]->id);
+        // printf(COLOR_GREEN "9 : Node LIST %d\n" RESET_COLOR, courant[h]->id);
         return 0; // Ajout réussi
     }
     
@@ -248,7 +248,7 @@ int ajouter_variable(Node *node) {
         return 1; // Erreur d'ajout
     }
     temp->suivant = nouveau_node_list(node);
-    printf(COLOR_GREEN "10 : Node LIST %d\n" RESET_COLOR, temp->suivant->id);
+    // printf(COLOR_GREEN "10 : Node LIST %d\n" RESET_COLOR, temp->suivant->id);
     
     return 0; // Ajout réussi
 }
@@ -306,7 +306,7 @@ int ajouter_parametre(Node *node) {
     int h = hash(node->parametre.nom);
     if (courant[h] == NULL) {
         courant[h] = nouveau_node_list(node);
-        printf(COLOR_GREEN "12 : Node LIST %d\n" RESET_COLOR, courant[h]->id);
+        // printf(COLOR_GREEN "12 : Node LIST %d\n" RESET_COLOR, courant[h]->id);
         return 0; // Ajout réussi
     }
     append_node(courant[h], node);
@@ -346,7 +346,7 @@ int ajouter_fonction(Node *node) {
     int h = hash(node->fonction.nom);
     if (courant[h] == NULL) {
         courant[h] = nouveau_node_list(node);
-        printf(COLOR_GREEN "12 : Node LIST %d\n" RESET_COLOR, courant[h]->id);
+        // printf(COLOR_GREEN "12 : Node LIST %d\n" RESET_COLOR, courant[h]->id);
         return 0; // Ajout réussi
     }
     NodeList *temp = courant[h];

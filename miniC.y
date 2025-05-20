@@ -137,8 +137,8 @@ programme	:
 		// free_list($2); // on libère la liste de fonctions
 		// free_all(); // on libère la table de symboles
 		
-		free_table($1);
-		free_list($2);
+		// free_table($1);
+		// free_list($2);
 		}
 ;
 
@@ -187,7 +187,7 @@ liste_fonctions	:
 		}
 	|	fonction {
 			$$ = nouveau_node_list($1);
-			printf(COLOR_GREEN "1 : Node LIST %d\n" RESET_COLOR, $$->id);
+			// printf(COLOR_GREEN "1 : Node LIST %d\n" RESET_COLOR, $$->id);
 				
 		}
 ;
@@ -208,7 +208,7 @@ liste_declarateurs	:
 		}
 	|	declarateur {
 		$$ = nouveau_node_list($1);
-		printf(COLOR_GREEN "2 : Node LIST %d\n" RESET_COLOR, $$->id);
+		// printf(COLOR_GREEN "2 : Node LIST %d\n" RESET_COLOR, $$->id);
 	}
 ;
 
@@ -297,7 +297,7 @@ type: VOID { $$ = VOID_TYPE; }
 liste_parms	:	
 		parm	{
 			$$ = nouveau_node_list($1);
-			printf(COLOR_GREEN "3 : Node LIST %d\n" RESET_COLOR, $$->id);
+			// printf(COLOR_GREEN "3 : Node LIST %d\n" RESET_COLOR, $$->id);
 			// printf("-----Paramètre : int %s\n", $1->parametre.nom);
 		}
 	|	liste_parms ',' parm	{
@@ -325,14 +325,14 @@ liste_instructions :
 			// on verifie pas encore si la variable existe déjà
 			if ($1 == NULL) {
 				$$ = nouveau_node_list($2);
-				printf(COLOR_GREEN "4 : Node LIST %d\n" RESET_COLOR, $$->id);
+				// printf(COLOR_GREEN "4 : Node LIST %d\n" RESET_COLOR, $$->id);
 				
 			} else {
 				// on ajoute instruction au début de la liste
 				// on verifie pas encore si la variable existe déjà
 				$$ = $1;
 				NodeList *nouv = nouveau_node_list($2);
-				printf(COLOR_GREEN "5 : Node LIST %d\n" RESET_COLOR, $$->id);
+				// printf(COLOR_GREEN "5 : Node LIST %d\n" RESET_COLOR, $$->id);
 				nouv->suivant = NULL; // pour pas faire une boucle
 				
 				if ($$->suivant == NULL) {
@@ -539,7 +539,9 @@ variable	:	// quand on utilise une variable
 
 			$$ = result;
 		}
-	|	variable '[' expression ']'
+	|	variable '[' expression ']' {
+
+	}
 ;
 
 expression	:		
@@ -665,7 +667,7 @@ liste_expressions	:
 	|	expression { 
 			// printf("Expression unique \n");
 			$$ = nouveau_node_list($1);
-			printf(COLOR_GREEN "6 : Node LIST %d\n" RESET_COLOR, $$->id);
+			// printf(COLOR_GREEN "6 : Node LIST %d\n" RESET_COLOR, $$->id);
 	}
 	|	/* epsilon */ { 
 			// printf("Liste d'expressions vide\n");
@@ -757,7 +759,7 @@ int main(int argc, char **argv) {
     yyparse();
 
     pop_table(); // nettoyage
-	free_all(); // nettoyage
+	/* free_all(); // nettoyage */
 	yylex_destroy();
 	if (file != NULL) {
 		fclose(file);
