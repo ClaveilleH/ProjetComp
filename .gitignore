@@ -8,3 +8,4 @@ output.dot
 y.output
 .vscode/
 *.dot
+*.png
