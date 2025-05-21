@@ -126,7 +126,7 @@ int generer_dot_node(Node *node) {
                 snprintf(label, sizeof(label), "%s", node->case_node.constante->symbole.nom);
             }
             else {
-                snprintf(label, sizeof(label), "CASE");
+                snprintf(label, sizeof(label), "CASE %d",node->case_node.constante->expression.valeur);
             }
             id = noeudPersonnalisable(label, "ellipse", "black", NULL);
 
@@ -136,8 +136,11 @@ int generer_dot_node(Node *node) {
 
         case DEFAULT_NODE :
             id = noeudPersonnalisable("case default", "ellipse", "black", NULL);
-            int instrDefault = generer_dot_node(node->default_node.instruction);
-            fleche(id, instrDefault);
+            if (node->default_node.instruction) {
+                int instrDefault = generer_dot_node(node->default_node.instruction);
+                fleche(id, instrDefault);
+            }
+            break;
 
         case FOR_NODE :
             id = noeudPersonnalisable("FOR", "ellipse", "black", NULL);
