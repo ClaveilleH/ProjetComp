@@ -546,7 +546,6 @@ variable	:	// quand on utilise une variable
 
 expression	:		
 		'(' expression ')' 			  			{ 
-			// $$ = $2; printf("Expression entre parenthèses : %d\n", $2); 
 			$$ = nouveau_node(EXPRESSION);
 			$$->expression.type = EXPRESSION_PARENTHESE;
 			$$->expression.expression = $2;
@@ -554,66 +553,60 @@ expression	:
 			$$->expression.valeur = $2->expression.valeur;
 		}
 	| MOINS expression %prec MOINSUNAIRE 		{ 
-			// $$ = -$2; printf("Moins unaire : %d\n", -$2); 
 			$$ = nouveau_node(EXPRESSION);
 			$$->expression.type = EXPRESSION_MOINS_UNAIRE;
 			$$->expression.expression = $2;
-			if ($2->expression.evaluable) {
-				$$->expression.evaluable = 1;
-				$$->expression.valeur = -$2->expression.valeur;
-			} else {
-				$$->expression.evaluable = 0;
-			}
+			$$->expression.evaluable = $2->expression.evaluable;
+			// if ($2->expression.evaluable) {
+			// 	$$->expression.evaluable = 1;
+			// 	$$->expression.valeur = -$2->expression.valeur;
+			// } else {
+			// 	$$->expression.evaluable = 0;
+			// }
 		}
 	| expression PLUS expression      			{ 
-			// $$ = $1 + $3; printf("Somme : %d + %d = %d\n", $1, $3, $1 + $3); 
-			$$ = construire_expr_binaire($1, $3, "+", '+');
-			$$ = reduire_expression($$);
+			$$ = construire_expr_binaire($1, $3, "+");
+			// $$ = reduire_expression($$);
 		}
     | expression MOINS expression     			{ 
-			// $$ = $1 - $3; printf("Soustraction : %d - %d = %d\n", $1, $3, $1 - $3); 
-			$$ = construire_expr_binaire($1, $3, "-", '-');
-			$$ = reduire_expression($$);
+			$$ = construire_expr_binaire($1, $3, "-");
+			// $$ = reduire_expression($$);
 		}
     | expression MUL expression       			{ 
-			// $$ = $1 * $3; printf("Multiplication : %d * %d = %d\n", $1, $3, $1 * $3); 
-			$$ = construire_expr_binaire($1, $3, "*", '*');
-			$$ = reduire_expression($$);
+			$$ = construire_expr_binaire($1, $3, "*");
+			// $$ = reduire_expression($$);
 
 		}
     | expression DIV expression       			{ 
-			// $$ = $1 / $3;  printf("Division : %d / %d = %d\n", $1, $3, $1 / $3); 
-			if ($3->expression.valeur == 0) {
+			int res;
+			int eval;
+			evaluer_expression($3, &res, &eval);
+			if ($3->expression.evaluable && $3->expression.valeur == 0) {
 				warn("Division par zéro");
 			}
-			$$ = construire_expr_binaire($1, $3, "/", '/');
-			$$ = reduire_expression($$);
+			$$ = construire_expr_binaire($1, $3, "/");
+			// $$ = reduire_expression($$);
 		}
 	|	expression LSHIFT expression 			{ 
-			// $$ = $1 << $3; printf("Décalage à gauche : %d << %d = %d\n", $1, $3, $1 << $3); 
-			$$ = construire_expr_binaire($1, $3, "<<", '<');
-			$$ = reduire_expression($$);
+			$$ = construire_expr_binaire($1, $3, "<<");
+			// $$ = reduire_expression($$);
 			// j'utilise '<' parce que je peux pas utiliser '<<'
 			
 		}
 	| expression RSHIFT expression 			{ 
-			// $$ = $1 >> $3; printf("Décalage à droite : %d >> %d = %d\n", $1, $3, $1 >> $3); 
-			$$ = construire_expr_binaire($1, $3, ">>", '>');
+			$$ = construire_expr_binaire($1, $3, ">>");
 			// j'utilise '>' parce que je peux pas utiliser '>>'
-			$$ = reduire_expression($$);
+			// $$ = reduire_expression($$);
 		}
 	| expression BAND expression       			{ 
-			// $$ = $1 & $3; printf("Et binaire : %d & %d = %d\n", $1, $3, $1 & $3); 
-			$$ = construire_expr_binaire($1, $3, "&", '&');
-			$$ = reduire_expression($$);
+			$$ = construire_expr_binaire($1, $3, "&");
+			// $$ = reduire_expression($$);
 		}
 	| expression BOR expression       			{ 
-			// $$ = $1 | $3; printf("Ou binaire : %d | %d = %d\n", $1, $3, $1 | $3); 
-			$$ = construire_expr_binaire($1, $3, "|", '|');
-			$$ = reduire_expression($$);
+			$$ = construire_expr_binaire($1, $3, "|");
+			// $$ = reduire_expression($$);
 		}
 	| CONSTANTE              		  			{ 
-			// $$ = $1;  printf("Constante : %d\n", $1); 
 			$$ = nouveau_node(EXPRESSION);
 			$$->expression.type = EXPRESSION_CONSTANTE;
 			$$->expression.valeur = $1;

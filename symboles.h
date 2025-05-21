@@ -53,7 +53,7 @@ typedef struct Node { //! est-ce qu'il faut pas faire des nodes pour les express
             char *operateur; // pour les expressions binaires
             Node *gauche; // pour les expressions binaires
             Node *droite; // pour les expressions binaires
-            Node *expression; 
+            Node *expression; // pour les expressions unaire
         } expression;
 
         
@@ -87,8 +87,8 @@ Node *nouveau_node(NodeType type);
 NodeList *nouveau_node_list(Node *node);
 int append_node(NodeList *list, Node *node);
 NodeList **creer_node_table();
-Node *construire_expr_binaire(Node *gauche, Node *droite, char *op, char op2);
-Node *reduire_expression(Node *node);
+Node *construire_expr_binaire(Node *gauche, Node *droite, char *op);
+// Node *reduire_expression(Node *node);
 
 
 int ajouter_variable(Node *node); // ajoute une variable à la table courante
@@ -100,7 +100,8 @@ Node *chercher_symbole(char *nom); // cherche un symbole dans la table courante
 
 void afficher_node2(char *header, Node *node);
 
-int evaluer(int operateur, Node *gauche, Node *droite, int *resultat, int *evaluable);
+// int evaluer(int operateur, Node *gauche, Node *droite, int *resultat, int *evaluable);
+int evaluer_expression(Node *node, int *resultat, int *evaluable);
 
 void push_table();
 void pop_table();

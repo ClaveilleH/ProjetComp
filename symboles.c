@@ -211,13 +211,13 @@ int append_node(NodeList *list, Node *node) {
         return 0; // Ajout réussi
 }
 
-Node *construire_expr_binaire(Node *gauche, Node *droite, char *op, char op2) {
+Node *construire_expr_binaire(Node *gauche, Node *droite, char *op) {
     Node *node = nouveau_node(EXPRESSION);
     node->expression.type = EXPRESSION_BINAIRE;
     node->expression.gauche = gauche;
     node->expression.droite = droite;
     node->expression.operateur = strdup(op);
-    evaluer(op2, gauche, droite, &node->expression.valeur, &node->expression.evaluable);
+    // evaluer(op2, gauche, droite, &node->expression.valeur, &node->expression.evaluable);
 
     return node;
 }
@@ -398,6 +398,279 @@ void afficher_instructions2(char *header, NodeList *list) {
     }
 }
 
+int evaluer_expression(Node *node, int *resultat, int *evaluable) {
+    if (node->type != EXPRESSION) {
+        if (node->type == SYMBOLE) {
+            if (node->symbole.evaluable) {
+                *evaluable = 1;
+                *resultat = node->symbole.valeur;
+                return 0; // Évaluation réussie
+            } else {
+                *evaluable = 0;
+                return 1; // Erreur d'évaluation
+            }
+        }
+        fprintf(stderr, "Erreur : le noeud n'est pas une expression\n");
+        exit(1); //! TODO: gérer l'erreur
+        /* Si il n'y a pas de probleme de grammaire normalement elle arrive jamais*/
+    }
+    if (node->expression.type == EXPRESSION_CONSTANTE) {
+        node->expression.evaluable = 1;
+        *evaluable = 1;
+        *resultat = node->expression.valeur;
+        return 0;
+    }
+    if (node->expression.type == EXPRESSION_MOINS_UNAIRE) {
+        int _valeur;
+        int _evaluable;
+        evaluer_expression(node->expression.expression, &_valeur, &_evaluable);
+        if (_evaluable) {
+            *resultat = -_valeur;
+            node->expression.evaluable = 1;
+            *evaluable = 1;
+            return 0; // Évaluation réussie
+        }
+        return 1; // Erreur d'évaluation
+    }
+    if (node->expression.type == EXPRESSION_PARENTHESE) {
+        int _valeur;
+        int _evaluable;
+        evaluer_expression(node->expression.expression, &_valeur, &_evaluable);
+        if (_evaluable) {
+            *resultat = _valeur;
+            node->expression.evaluable = 1;
+            node->expression.valeur = _valeur;
+            *evaluable = 1;
+            return 0; // Évaluation réussie
+        }
+        node->expression.evaluable = 0;
+        return 1; // Erreur d'évaluation
+    }
+    if (node->expression.type == EXPRESSION_BINAIRE) {
+        int _valeur_gauche;
+        int _valeur_droite;
+        int _evaluable_gauche;
+        int _evaluable_droite;
+        evaluer_expression(node->expression.gauche, &_valeur_gauche, &_evaluable_gauche);
+        evaluer_expression(node->expression.droite, &_valeur_droite, &_evaluable_droite);
+        if (_evaluable_gauche && _evaluable_droite) {
+            switch (node->expression.operateur[0]) {
+                case '+':
+                    *resultat = _valeur_gauche + _valeur_droite;
+                    break;
+                case '-':
+                    *resultat = _valeur_gauche - _valeur_droite;
+                    break;
+                case '*':
+                    *resultat = _valeur_gauche * _valeur_droite;
+                    break;
+                case '/':
+                    *resultat = _valeur_gauche / _valeur_droite;
+                    break;
+                case '&':
+                    *resultat = _valeur_gauche & _valeur_droite;
+                    break;
+                case '|':
+                    *resultat = _valeur_gauche | _valeur_droite;
+                    break;
+                case '<':
+                    *resultat = _valeur_gauche << _valeur_droite;
+                    break;
+                case '>':
+                    *resultat = _valeur_gauche >> _valeur_droite;
+                    break;
+                default:
+                    *evaluable = 0;
+                    return 1; // Erreur d'évaluation
+            }
+            printf("resultat: %d\n", *resultat);
+            node->expression.valeur = *resultat;
+            node->expression.evaluable = 1;
+            *evaluable = 1;
+            return 0; // Évaluation réussie
+        }
+
+        node->expression.evaluable = 0;
+        *evaluable = 0;
+        return 1; // Erreur d'évaluation
+    }
+    return 1; // Erreur d'évaluation
+}
+
+void afficher_node2(char *header, Node *node) {
+    if (node == NULL) {
+        printf("%sAucun noeud\n", header ? header : "");
+        return;
+    }
+    if (header == NULL) {
+        header = "";
+    }
+
+    char *header2;
+    size_t len = strlen(header);
+    size_t suffixe_len = strlen("│   "); // Compte les caractères, pas les octets réels
+    size_t alloc_len = len + suffixe_len + 1;
+
+    header2 = calloc(alloc_len, sizeof(char)); // Utilisez calloc pour initialiser la mémoire
+    if (header2 == NULL) {
+        fprintf(stderr, "Erreur : allocation mémoire échouée\n");
+        return;
+    }
+
+    snprintf(header2, alloc_len, "%s│   ", header);
+    switch (node->type){
+        case SYMBOLE :
+            if (node->symbole.evaluable) {
+                printf("%s├── Symbole : %s = %d\n", header, node->symbole.nom, node->symbole.valeur);
+            } else {
+                printf("%s├── Symbole : %s (non évaluable)\n", header, node->symbole.nom);
+            }
+            // printf("%s├── Symbole : %s\n", header, node->symbole.nom);
+            break;
+        case FONCTION :
+            printf("%s├── Fonction t'es pas censé voir ça : %s\n", header, node->fonction.nom);
+            break;
+        case PARAMETRE :
+            printf("%s├── Parametre : %s\n", header, node->parametre.nom);
+            break;
+        case IF_NODE :
+            printf("%s├── If :\n", header);
+            afficher_node2(header2, node->if_node.condition);
+            afficher_node2(header2, node->if_node.instruction);
+            break;
+        case IF_ELSE_NODE :
+            printf("%s├── If :\n", header);
+            afficher_node2(header2, node->if_else_node.condition);
+            afficher_node2(header2, node->if_else_node.instruction);
+            printf("%s├── Else :\n", header);
+            afficher_node2(header2, node->if_else_node.instruction_else);
+            break;
+        
+        case SWITCH_NODE :
+            printf("%s├── Switch :\n", header);
+            afficher_node2(header2, node->switch_node.expression);
+            afficher_node2(header2, node->switch_node.instruction);
+            break;
+        case CASE_NODE :
+            printf("%s├── Case :\n", header);
+            afficher_node2(header2, node->case_node.constante);
+            afficher_node2(header2, node->case_node.instruction);
+            break;
+        case DEFAULT_NODE :
+            printf("%s├── Default :\n", header);
+            afficher_node2(header2, node->default_node.instruction);
+            break;
+        case FOR_NODE :
+            printf("%s├── For :\n", header);
+            afficher_node2(header2, node->for_node.init);
+            afficher_node2(header2, node->for_node.condition);
+            afficher_node2(header2, node->for_node.incr);
+            afficher_node2(header2, node->for_node.instruction);
+            break;
+        case WHILE_NODE :
+            printf("%s├── While :\n", header);
+            afficher_node2(header2, node->while_node.condition);
+            afficher_node2(header2, node->while_node.instruction);
+            break;
+        case CONDITION_BINAIRE :
+        // printf("aaaaaaa");
+            printf("%s├── Condition binaire : %s\n", header, node->condition_binaire.operateur);
+            afficher_node2(header2, node->condition_binaire.gauche);
+            afficher_node2(header2, node->condition_binaire.droite);
+            break;
+        case EXPRESSION :
+            switch (node->expression.type) {
+                case EXPRESSION_BINAIRE :
+                    printf("%s├── Expression binaire : %s", header, node->expression.operateur);
+                    if (node->expression.evaluable) {
+                        printf("  (%d)", node->expression.valeur);
+                    } else {
+                        printf("  (_)");
+                    }
+                    printf("\n");
+                    afficher_node2(header2, node->expression.gauche);
+                    afficher_node2(header2, node->expression.droite);
+                    break;
+                case EXPRESSION_MOINS_UNAIRE :
+                    printf("%s├── Expression moins unaire :\n", header);
+                    afficher_node2(header2, node->expression.expression);
+                    break;
+                case EXPRESSION_PARENTHESE :
+                    printf("%s├── Expression entre parenthèses", header);
+                    if (node->expression.evaluable) {
+                        printf("  (%d)", node->expression.valeur);
+                    } else {
+                        printf("  (_)");
+                    }
+                    printf("\n");
+                    afficher_node2(header2, node->expression.expression);
+                    break;
+                case EXPRESSION_CONSTANTE :
+                    printf("%s├── Constante : %d\n", header, node->expression.valeur);
+                    break;
+                default:
+                    printf("%sEXPRESSION NON DEFINI", header);
+            }
+            break;
+        case BREAK_NODE :
+            printf("%s├── Break\n", header);
+            break;
+        case RETURN_NODE :
+            if (node->return_node.expression != NULL) {
+                printf("%s├── Return :\n", header);
+                afficher_node2(header2, node->return_node.expression);
+            } else {
+                printf("%s├── Return\n", header);
+            }
+            break;
+        case AFFECTATION :
+            printf("%s├── Affectation : %s\n", header, node->affectation.variable->symbole.nom);
+            afficher_node2(header2, node->affectation.expression);
+            break;
+        case APPEL_FONCTION :
+            printf("%s├── Appel de fonction : %s\n", header, node->appel_fonction.nom);
+            afficher_instructions2(header2, node->appel_fonction.liste_expressions);
+            break;
+        case BLOC :
+            char *header3;
+            header3 = malloc(strlen(header2) + strlen("│   ") + 1); // Utilisez header2 pour le calcul de la taille
+            if (header3 == NULL) {
+                fprintf(stderr, "Erreur : allocation mémoire échouée\n");
+                free(header2);
+                return;
+            }
+            snprintf(header3, strlen(header2) + strlen("│   ") + 1, "%s│   ", header2);
+
+            printf("%s├── Bloc :\n", header);
+            printf("%s├── Déclarations :\n", header2);
+            
+            NodeList **table_declarations = node->bloc.table_declarations;
+            for (int i = 0; i < TAILLE; i++) {
+                if (table_declarations[i] != NULL) {
+                    NodeList *temp = table_declarations[i];
+                    while (temp != NULL) {
+                        afficher_node2(header3, temp->node);
+                        temp = temp->suivant;
+                    }
+                }
+            }
+            printf("%s├── Instructions :\n", header2);
+            afficher_instructions2(header2, node->bloc.liste_instructions);
+            free(header3);
+            break;
+        case TEST :
+            printf("%s├── Test : %s\n", header, node->test.txt);
+            break;
+        default:
+            printf("%sNON DEFINI", header);
+            printf(" : %d\n", node->type);
+            break;
+    }
+    free(header2);
+}
+
+
+/*
 
 int evaluer(int operateur, Node *gauche, Node *droite, int *resultat, int *evaluable) {
     int valeur_gauche = 0;
@@ -549,167 +822,4 @@ Node *reduire_expression(Node *node) {
     }
     return node;
 }
-
-void afficher_node2(char *header, Node *node) {
-    if (node == NULL) {
-        printf("%sAucun noeud\n", header ? header : "");
-        return;
-    }
-    if (header == NULL) {
-        header = "";
-    }
-
-    char *header2;
-    size_t len = strlen(header);
-    size_t suffixe_len = strlen("│   "); // Compte les caractères, pas les octets réels
-    size_t alloc_len = len + suffixe_len + 1;
-
-    header2 = calloc(alloc_len, sizeof(char)); // Utilisez calloc pour initialiser la mémoire
-    if (header2 == NULL) {
-        fprintf(stderr, "Erreur : allocation mémoire échouée\n");
-        return;
-    }
-
-    snprintf(header2, alloc_len, "%s│   ", header);
-    switch (node->type){
-        case SYMBOLE :
-            if (node->symbole.evaluable) {
-                printf("%s├── Symbole : %s = %d\n", header, node->symbole.nom, node->symbole.valeur);
-            } else {
-                printf("%s├── Symbole : %s (non évaluable)\n", header, node->symbole.nom);
-            }
-            // printf("%s├── Symbole : %s\n", header, node->symbole.nom);
-            break;
-        case FONCTION :
-            printf("%s├── Fonction t'es pas censé voir ça : %s\n", header, node->fonction.nom);
-            break;
-        case PARAMETRE :
-            printf("%s├── Parametre : %s\n", header, node->parametre.nom);
-            break;
-        case IF_NODE :
-            printf("%s├── If :\n", header);
-            afficher_node2(header2, node->if_node.condition);
-            afficher_node2(header2, node->if_node.instruction);
-            break;
-        case IF_ELSE_NODE :
-            printf("%s├── If :\n", header);
-            afficher_node2(header2, node->if_else_node.condition);
-            afficher_node2(header2, node->if_else_node.instruction);
-            printf("%s├── Else :\n", header);
-            afficher_node2(header2, node->if_else_node.instruction_else);
-            break;
-        
-        case SWITCH_NODE :
-            printf("%s├── Switch :\n", header);
-            afficher_node2(header2, node->switch_node.expression);
-            afficher_node2(header2, node->switch_node.instruction);
-            break;
-        case CASE_NODE :
-            printf("%s├── Case :\n", header);
-            afficher_node2(header2, node->case_node.constante);
-            afficher_node2(header2, node->case_node.instruction);
-            break;
-        case DEFAULT_NODE :
-            printf("%s├── Default :\n", header);
-            afficher_node2(header2, node->default_node.instruction);
-            break;
-        case FOR_NODE :
-            printf("%s├── For :\n", header);
-            afficher_node2(header2, node->for_node.init);
-            afficher_node2(header2, node->for_node.condition);
-            afficher_node2(header2, node->for_node.incr);
-            afficher_node2(header2, node->for_node.instruction);
-            break;
-        case WHILE_NODE :
-            printf("%s├── While :\n", header);
-            afficher_node2(header2, node->while_node.condition);
-            afficher_node2(header2, node->while_node.instruction);
-            break;
-        case CONDITION_BINAIRE :
-        // printf("aaaaaaa");
-            printf("%s├── Condition binaire : %s\n", header, node->condition_binaire.operateur);
-            afficher_node2(header2, node->condition_binaire.gauche);
-            afficher_node2(header2, node->condition_binaire.droite);
-            break;
-        case EXPRESSION :
-            switch (node->expression.type) {
-                case EXPRESSION_BINAIRE :
-                    printf("%s├── Expression binaire : %s", header, node->expression.operateur);
-                    if (node->expression.evaluable) {
-                        printf("  (%d)", node->expression.valeur);
-                    }
-                    printf("\n");
-                    afficher_node2(header2, node->expression.gauche);
-                    afficher_node2(header2, node->expression.droite);
-                    break;
-                case EXPRESSION_MOINS_UNAIRE :
-                    printf("%s├── Expression moins unaire :\n", header);
-                    afficher_node2(header2, node->expression.expression);
-                    break;
-                case EXPRESSION_PARENTHESE :
-                    printf("%s├── Expression entre parenthèses\n", header);
-                    afficher_node2(header2, node->expression.expression);
-                    break;
-                case EXPRESSION_CONSTANTE :
-                    printf("%s├── Constante : %d\n", header, node->expression.valeur);
-                    break;
-                default:
-                    printf("%sEXPRESSION NON DEFINI", header);
-            }
-            break;
-        case BREAK_NODE :
-            printf("%s├── Break\n", header);
-            break;
-        case RETURN_NODE :
-            if (node->return_node.expression != NULL) {
-                printf("%s├── Return :\n", header);
-                afficher_node2(header2, node->return_node.expression);
-            } else {
-                printf("%s├── Return\n", header);
-            }
-            break;
-        case AFFECTATION :
-            printf("%s├── Affectation : %s\n", header, node->affectation.variable->symbole.nom);
-            afficher_node2(header2, node->affectation.expression);
-            break;
-        case APPEL_FONCTION :
-            printf("%s├── Appel de fonction : %s\n", header, node->appel_fonction.nom);
-            afficher_instructions2(header2, node->appel_fonction.liste_expressions);
-            break;
-        case BLOC :
-            char *header3;
-            header3 = malloc(strlen(header2) + strlen("│   ") + 1); // Utilisez header2 pour le calcul de la taille
-            if (header3 == NULL) {
-                fprintf(stderr, "Erreur : allocation mémoire échouée\n");
-                free(header2);
-                return;
-            }
-            snprintf(header3, strlen(header2) + strlen("│   ") + 1, "%s│   ", header2);
-
-            printf("%s├── Bloc :\n", header);
-            printf("%s├── Déclarations :\n", header2);
-            
-            NodeList **table_declarations = node->bloc.table_declarations;
-            for (int i = 0; i < TAILLE; i++) {
-                if (table_declarations[i] != NULL) {
-                    NodeList *temp = table_declarations[i];
-                    while (temp != NULL) {
-                        afficher_node2(header3, temp->node);
-                        temp = temp->suivant;
-                    }
-                }
-            }
-            printf("%s├── Instructions :\n", header2);
-            afficher_instructions2(header2, node->bloc.liste_instructions);
-            free(header3);
-            break;
-        case TEST :
-            printf("%s├── Test : %s\n", header, node->test.txt);
-            break;
-        default:
-            printf("%sNON DEFINI", header);
-            printf(" : %d\n", node->type);
-            break;
-    }
-    free(header2);
-}
+*/
