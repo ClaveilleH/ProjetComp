@@ -544,6 +544,24 @@ variable	:	// quand on utilise une variable
 			$$ = result;
 		}
 	|	variable '[' expression ']' {
+		$$ = $1;
+		// on verifie si la variable est un acces tableau ou un symbole
+		if ($1->type == SYMBOLE) {
+			// on verifie si la variable est un tableau
+			if ($1->symbole.type != TABLEAU) {
+				yyerror("Variable non déclarée comme tableau");
+			}
+			$$ = nouveau_node(ACCES_TABLEAU);
+			$$->acces_tableau.variable = $1;
+			$$->acces_tableau.liste_expressions = nouveau_node_list($3);
+		} else if ($1->type == ACCES_TABLEAU) {
+			$$ = $1;
+			// on ajoute l'expression à la liste d'expressions
+			append_node($1->acces_tableau.liste_expressions, $3);
+		} else {
+			yyerror("Variable non déclarée comme tableau");
+		}
+
 
 	}
 ;

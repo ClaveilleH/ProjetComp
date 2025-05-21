@@ -18,6 +18,7 @@ typedef enum {
     EXPRESSION,
     AFFECTATION,
     APPEL_FONCTION,
+    ACCES_TABLEAU,
     BLOC,
     TEST, 
 } NodeType;
@@ -63,6 +64,8 @@ typedef struct Node { //! est-ce qu'il faut pas faire des nodes pour les express
         struct { Node *variable; Node *expression; } affectation;
         
         struct { char *nom; NodeList *liste_expressions; } appel_fonction;
+
+        struct { Node *variable; NodeList *liste_expressions; } acces_tableau;
 
         struct { NodeList **table_declarations; NodeList *liste_instructions; } bloc;
 

@@ -520,7 +520,9 @@ void afficher_node2(char *header, Node *node) {
     snprintf(header2, alloc_len, "%s│   ", header);
     switch (node->type){
         case SYMBOLE :
-            if (node->symbole.evaluable) {
+            if (node->symbole.type == TABLEAU) {
+                printf("%s├── Symbole : %s (tableau) dim:%d\n", header, node->symbole.nom, node->symbole.dimension);
+            } else if (node->symbole.evaluable) {
                 printf("%s├── Symbole : %s = %d\n", header, node->symbole.nom, node->symbole.valeur);
             } else {
                 printf("%s├── Symbole : %s (non évaluable)\n", header, node->symbole.nom);
@@ -624,12 +626,23 @@ void afficher_node2(char *header, Node *node) {
             }
             break;
         case AFFECTATION :
-            printf("%s├── Affectation : %s\n", header, node->affectation.variable->symbole.nom);
+            printf("%s├── Affectation : ", header);
+            if (node->affectation.variable->type == SYMBOLE) {
+                printf("%s\n", node->affectation.variable->symbole.nom);
+            } else if (node->affectation.variable->type == ACCES_TABLEAU) {
+                printf("%s\n", node->affectation.variable->acces_tableau.variable->symbole.nom);
+            } else {
+                printf("NON DEFINI\n");
+            }
             afficher_node2(header2, node->affectation.expression);
             break;
         case APPEL_FONCTION :
             printf("%s├── Appel de fonction : %s\n", header, node->appel_fonction.nom);
             afficher_instructions2(header2, node->appel_fonction.liste_expressions);
+            break;
+        case ACCES_TABLEAU :
+            printf("%s├── Accès tableau : %s\n", header, node->acces_tableau.variable->symbole.nom);
+            afficher_instructions2(header2, node->acces_tableau.liste_expressions);
             break;
         case BLOC :
             char *header3;
