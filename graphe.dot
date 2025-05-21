@@ -2,7 +2,7 @@ digraph G {
 node0 [label="main, int" shape=invtrapezium color=blue];
 node1 [label="BLOC" shape=ellipse color=black];
 node2 [label=":=" shape=circle color=black];
-node3 [label="x" shape=ellipse color=black];
+node3 [label="i" shape=ellipse color=black];
 node2 -> node3;
 node4 [label="1" shape=ellipse color=black];
 node2 -> node4;

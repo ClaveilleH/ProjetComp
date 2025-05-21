@@ -103,7 +103,7 @@ programme	:
 						// printf("│   ├── %s\n", tmp->node->symbole.nom);
 						if (DEBUG) afficher_node2("│   ├──", tmp->node);
 						// Génération du graphe pour chaque déclaration globale
-                    	generer_dot_node(tmp->node);
+                    	// generer_dot_node(tmp->node);
 
 						tmp = tmp->suivant;
 					}
