@@ -631,6 +631,7 @@ void afficher_node2(char *header, Node *node) {
                 printf("%s\n", node->affectation.variable->symbole.nom);
             } else if (node->affectation.variable->type == ACCES_TABLEAU) {
                 printf("%s\n", node->affectation.variable->acces_tableau.variable->symbole.nom);
+                afficher_node2(header2, node->affectation.variable);
             } else {
                 printf("NON DEFINI\n");
             }

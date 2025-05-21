@@ -76,6 +76,21 @@ int generer_dot_node(Node *node) {
             }
             break;
         }
+        case ACCES_TABLEAU:
+            id = noeudPersonnalisable("TAB", "ellipse", "black", NULL);
+            int nom = noeudPersonnalisable(node->acces_tableau.variable->symbole.nom, "ellipse", "black", NULL);
+            // int nom = generer_dot_node(node->symbole.nom);
+            fleche(id, nom);
+            // indices du tableau
+            NodeList *indice = node->acces_tableau.liste_expressions;
+            while (indice != NULL) {
+                int id_indice = generer_dot_node(indice->node); // affiche la valeur d’indice 
+                fleche(id, id_indice);
+                indice = indice->suivant;
+            }
+
+            break;
+
         case PARAMETRE :
             id = noeudPersonnalisable(node->parametre.nom, "ellipse", "blue", NULL);
             break;
