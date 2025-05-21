@@ -1,4 +1,6 @@
 int main() {
-    int x ;
-    x = 1 / 5 + 1;
+    int x;
+    int y;
+    x = 1;
+    y = 1 / x;
 }

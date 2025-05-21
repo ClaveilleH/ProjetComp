@@ -18,6 +18,11 @@ int generer_dot_node(Node *node);
 #define RESET_COLOR "\033[0m"
 #define DEBUG 1
 
+#define EMIT_WARNING(fmt, ...) do { \
+    fprintf(stderr, COLOR_PURPLE "[Warning] " RESET_COLOR fmt "\n", ##__VA_ARGS__); \
+    fprintf(stderr, "          at line %d, near '%s'\n", yylineno, yytext); \
+} while(0)
+
 extern int yylineno;
 extern char *yytext;
 extern FILE *yyin;
@@ -33,6 +38,7 @@ FILE *file;
 
 NodeList *liste_fonctions = NULL; // liste globale des fonctions A SUPP
 Node *current_function = NULL; // fonction courante
+int mode_affectation = 0; // mode déclaration ou pas
 
 
 %}
@@ -197,7 +203,16 @@ declaration	:
 			$$ = $2;
 		}
 		// Déclaration avec initialisation
-		|type liste_declarateurs '=' expression ';' {$$ = $2; }
+		|type liste_declarateurs '=' expression ';' {
+			$$ = $2;
+			NodeList *tmp = $2;
+			while (tmp->suivant != NULL) { // on va a la derniere variable
+				tmp = tmp->suivant;
+			}
+			tmp->node->symbole.valeur = $4->expression.valeur; // on affecte la valeur de l'expression à la variable
+			tmp->node->symbole.evaluable = $4->expression.evaluable; // on met la variable comme évaluable
+			tmp->node->symbole.isInitialized = 1; // on met la variable comme initialisée
+		}
 ;
 
 liste_declarateurs	:	
@@ -208,7 +223,6 @@ liste_declarateurs	:
 		}
 	|	declarateur {
 		$$ = nouveau_node_list($1);
-		// printf(COLOR_GREEN "2 : Node LIST %d\n" RESET_COLOR, $$->id);
 	}
 ;
 
@@ -521,18 +535,8 @@ variable	:	// quand on utilise une variable
 				snprintf(s, alloc_len, "Variable utilisée mais jamais déclarée : %s", $1);
 				error(s); // Appel de la fonction error
 			}
-			if (result->type == SYMBOLE) {
-				// on verifie si la variable est initialisée
-				if (result->symbole.isInitialized == 0) {
-					size_t alloc_len = strlen("Variable utilisée mais jamais initialisée :") + strlen($1) + 10; // Ajoutez une marge de sécurité
-					char *s = malloc(alloc_len);
-					if (s == NULL) {
-						fprintf(stderr, "Erreur : allocation mémoire échouée\n");
-						exit(EXIT_FAILURE);
-					}
-					snprintf(s, alloc_len, "Variable utilisée mais jamais initialisée : %s", $1);
-					warn(s); // Appel de la fonction warn
-				}
+			if (result->type == SYMBOLE && result->symbole.isInitialized == 0) {
+				EMIT_WARNING("Variable '%s' utilisée sans être initialisée", result->symbole.nom);
 			} else if (result->type == FONCTION) {
 				yyerror("Fonction utilisée comme variable");
 			}
@@ -581,8 +585,9 @@ expression	:
 			int res;
 			int eval;
 			evaluer_expression($3, &res, &eval);
-			if ($3->expression.evaluable && $3->expression.valeur == 0) {
-				warn("Division par zéro");
+			if (eval && res == 0) {
+				// warn("Division par zéro");
+				EMIT_WARNING("Division par zéro");
 			}
 			$$ = construire_expr_binaire($1, $3, "/");
 			// $$ = reduire_expression($$);
