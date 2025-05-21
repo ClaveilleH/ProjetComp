@@ -28,7 +28,7 @@ void fleche(int from, int to) {
     fprintf(f_dot, "node%d -> node%d;\n", from, to);
 }
 
-int noeudPerso(const char* label, const char* shape, const char* color, const char* style) {
+int noeudPersonnalisable(const char* label, const char* shape, const char* color, const char* style) {
     int id = compteur++;
     fprintf(f_dot, "node%d [label=\"%s\"", id, label);
     if (shape) fprintf(f_dot, " shape=%s", shape);
@@ -44,75 +44,132 @@ int generer_dot_node(Node *node) {
     char label[128];
     int id = -1;
 
-    switch (node->type) {
-        case SYMBOLE:
-            snprintf(label, sizeof(label), "%s", node->symbole.nom);
-            id = noeudPerso(label, "ellipse", "black", NULL);
+    switch (node->type){
+
+        case SYMBOLE :
+            // if (node->symbole.evaluable) {
+
+            id = noeudPersonnalisable(node->symbole.nom, "ellipse", "black", NULL);
+
+            
             break;
 
-        case PARAMETRE:
-            snprintf(label, sizeof(label), "%s", node->parametre.nom);
-            id = noeudPerso(label, "box", "blue", NULL);
-            break;
-
-
-
-        case EXPRESSION: {
-            if (node->expression.gauche && node->expression.droite) {
-                // Cas affectation := entre deux expressions
-                id = noeudPerso(":=", "circle", "black", NULL);
-
-                // Gauche de l'affectation
-                int g = generer_dot_node(node->expression.gauche);
-                fleche(id, g);
-
-                // Droite de l'affectation
-                int d = generer_dot_node(node->expression.droite);
-                fleche(id, d);
-
-        
-
-            } else {
-            // Expression seule (constante, variable ou sous-expression)
-                snprintf(label, sizeof(label), "%d", node->expression.valeur);
-                id = noeudPerso(label, "ellipse", "black", NULL);
-
+        case FONCTION :{
+			// on teste si la fonction est externe si oui on ne la déclare pas
+            if (!(node->fonction.externe)){
+            const char* typeFonction = node->fonction.type == ENTIER ? "int" : "void";
+            char label[128];
+            strcpy(label, node->fonction.nom);
+            strcat(label, ", ");
+            strcat(label, typeFonction);
+            id = noeudPersonnalisable(label, "invtrapezium", "blue", NULL);
+            NodeList *paramFonction = node->fonction.liste_parametres;
+            while (paramFonction) {
+                int id_param = generer_dot_node(paramFonction->node);
+                fleche(id, id_param);
+                paramFonction = paramFonction->suivant;
+            }
+            if (node->fonction.bloc) {
+                int id_bloc = generer_dot_node(node->fonction.bloc);
+                fleche(id, id_bloc);
+            }
             }
             break;
         }
+        case PARAMETRE :
+            id = noeudPersonnalisable(node->parametre.nom, "ellipse", "blue", NULL);
+            break;
 
-
-
-        case IF_NODE:
-            id = noeudPerso("IF", "diamond", "black", NULL);
-
-            if (node->if_node.condition) {
+        case IF_NODE :
+            id = noeudPersonnalisable("IF", "diamond", "black", NULL);
+             if (node->if_node.condition) {
                 int cond = generer_dot_node(node->if_node.condition);
                 fleche(id, cond);
             }
             if (node->if_node.instruction) {
-                int instr = generer_dot_node(node->if_node.instruction);
-                fleche(id, instr);
+                int instrIF = generer_dot_node(node->if_node.instruction);
+                fleche(id, instrIF);
             }
             break;
 
-        case RETURN_NODE:
-            id = noeudPerso("RETURN", "trapezium", "blue", NULL);
-            if (node->expression.expression) {
-                int expr = generer_dot_node(node->expression.expression);
-                fleche(id, expr);
+        case IF_ELSE_NODE :
+            id = noeudPersonnalisable("IF", "diamond", "black", NULL);
+            if (node->if_else_node.condition) {
+                int cond = generer_dot_node(node->if_else_node.condition);
+                fleche(id, cond);
+            }
+            if (node->if_else_node.instruction) {
+                int instrIfElse = generer_dot_node(node->if_else_node.instruction);
+                fleche(id, instrIfElse);
+            }
+
+            int idElse = noeudPersonnalisable("ELSE", "diamond", "black", NULL);
+            fleche(id, idElse);
+            
+            if (node->if_else_node.instruction) {
+                int instrElse = generer_dot_node(node->if_else_node.instruction_else);
+                fleche(idElse, instrElse);
             }
             break;
-
-        case BREAK_NODE:
-            id = noeudPerso("BREAK", "ellipse", "red", NULL);
+        
+        case SWITCH_NODE :
+            id = noeudPersonnalisable("SWITCH", "ellipse", "black", NULL);
+            int expr = generer_dot_node(node->switch_node.expression);
+            fleche(id, expr);
+            int instrSwitch = generer_dot_node(node->switch_node.instruction);
+            fleche(id, instrSwitch);
             break;
-        
-        
 
-        case CONDITION_BINAIRE: {
+        case CASE_NODE :
+
+            if (node->case_node.constante->type == SYMBOLE) {
+                snprintf(label, sizeof(label), "%s", node->case_node.constante->symbole.nom);
+            }
+            else {
+                snprintf(label, sizeof(label), "CASE");
+            }
+            id = noeudPersonnalisable(label, "ellipse", "black", NULL);
+
+            int instrCase = generer_dot_node(node->case_node.instruction);
+            fleche(id, instrCase);
+            break;
+
+        case DEFAULT_NODE :
+            id = noeudPersonnalisable("case default", "ellipse", "black", NULL);
+            int instrDefault = generer_dot_node(node->default_node.instruction);
+            fleche(id, instrDefault);
+
+        case FOR_NODE :
+            id = noeudPersonnalisable("FOR", "ellipse", "black", NULL);
+
+            int initialisation = generer_dot_node(node->for_node.init);
+            fleche(id, initialisation);
+
+            int condition = generer_dot_node(node->for_node.condition);
+            fleche(id, condition);
+
+            int incrementation = generer_dot_node(node->for_node.incr);
+            fleche(id, incrementation);
+
+            int instruc = generer_dot_node(node->for_node.instruction);
+            fleche(id, instruc);
+
+            break;
+
+        case WHILE_NODE :
+            id = noeudPersonnalisable("WHILE", "ellipse", "black", NULL);
+
+            int conditionWhile = generer_dot_node(node->while_node.condition);
+            fleche(id, conditionWhile);
+
+            int instrWhile = generer_dot_node(node->while_node.instruction);
+            fleche(id, instrWhile);
+           
+            break;
+
+        case CONDITION_BINAIRE : {
             const char *op = node->condition_binaire.operateur;
-            id = noeudPerso(op, "ellipse", "black", NULL);
+            id = noeudPersonnalisable(op, "ellipse", "black", NULL);
 
             if (node->condition_binaire.gauche) {
                 int g = generer_dot_node(node->condition_binaire.gauche);
@@ -123,59 +180,101 @@ int generer_dot_node(Node *node) {
                 fleche(id, d);
             }
             break;
-}
+        }
+        case EXPRESSION :
+            switch (node->expression.type) {
 
+                case EXPRESSION_BINAIRE : {
+                    const char *op = node->expression.operateur;
+                    id = noeudPersonnalisable(op, "ellipse", "black", NULL);
 
-    
+                    if (node->expression.gauche) {
+                        int g = generer_dot_node(node->expression.gauche);
+                        fleche(id, g);
+                    }
+                    if (node->expression.droite) {
+                        int d = generer_dot_node(node->expression.droite);
+                        fleche(id, d);
+                    }
+                    break;
+                }
+                case EXPRESSION_MOINS_UNAIRE :
+                    id = noeudPersonnalisable("-", "ellipse", "black", NULL);
+                    int g = generer_dot_node(node->expression.expression);
+                    fleche(id, g);
+                    break;
 
+                case EXPRESSION_PARENTHESE :
+                    id = generer_dot_node(node->expression.expression);
+                    break;
 
-        case FONCTION:
-            {
-            const char* typeFonction = node->fonction.type == ENTIER ? "int" : "void";
-            char label[128];
-            strcpy(label, node->fonction.nom);
-            strcat(label, ", ");
-            strcat(label, typeFonction);
+                case EXPRESSION_CONSTANTE :
+                    snprintf(label, sizeof(label), "%d", node->expression.valeur);
+                    id = noeudPersonnalisable(label, "ellipse", "black", NULL);
+                    break;
 
-            int func = noeudPerso(label, "invtrapezium", "blue", NULL);
-            id = noeudPerso("BLOC", "ellipse", "black", NULL);
-            fleche(func, id);
+                default:
+                    id = noeudPersonnalisable("NON DEFINI", "ellipse", "gray", "dashed");
+            }
+            break;
 
+        case BREAK_NODE :
+            id = noeudPersonnalisable("BREAK", "rectangle", "black", NULL);
+            break;
 
-            // Paramètres
-            NodeList *param = node->fonction.liste_parametres;
+        case RETURN_NODE :
+            id = noeudPersonnalisable("RETURN", "trapezium", "blue", NULL);
+            if (node->return_node.expression != NULL) {
+                int expr = generer_dot_node(node->return_node.expression);
+                fleche(id, expr);
+            } 
+            break;
+
+        case AFFECTATION :
+            id = noeudPersonnalisable(":=", "circle", "black", NULL);
+            // Partie gauche de l'affectation
+            int g = generer_dot_node(node->affectation.variable);
+            fleche(id, g);
+
+            // Partie droite de l'affectation
+            int d = generer_dot_node(node->affectation.expression);
+            fleche(id, d);
+            break;
+
+        case APPEL_FONCTION :
+            id = noeudPersonnalisable(node->appel_fonction.nom, "septagon", "black", NULL);
+            
+            // Paramètres de l'appel de fonction
+            NodeList *param = node->appel_fonction.liste_expressions;
             while (param) {
                 int id_param = generer_dot_node(param->node);
                 fleche(id, id_param);
                 param = param->suivant;
             }
+            break;
 
-            // Déclarations locales
-            // if (node->fonction.table_declarations) {
-            //     for (int i = 0; i < TAILLE; ++i) {
-            //         NodeList *decl = node->fonction.table_declarations[i];
-            //         while (decl) {
-            //             int id_decl = generer_dot_node(decl->node);
-            //             fleche(id, id_decl);
-            //             decl = decl->suivant;
-            //         }
-            //     }
-            // }
+        case BLOC :
+            id = noeudPersonnalisable("BLOC", "ellipse", "black", NULL);
+            
+            
+            // Paramètres de l'appel de fonction
+            NodeList *instrucBloc = node->bloc.liste_instructions;
+            while (instrucBloc) {
+                int id_instruc = generer_dot_node(instrucBloc->node);
+                fleche(id, id_instruc);
+                instrucBloc = instrucBloc->suivant;
+            }
+            
+            break;
 
-            // // Instructions
-            // NodeList *instr = node->fonction.liste_instructions;
-            // while (instr) {
-            //     int id_instr = generer_dot_node(instr->node);
-            //     fleche(id, id_instr);
-            //     instr = instr->suivant;
-            // }
+        case TEST :
+            id = noeudPersonnalisable(node->test.txt, "ellipse", "black", NULL);
+
             break;
 
         default:
-            id = noeudPerso("Inconnu", "ellipse", "gray", "dashed");
+            id = noeudPersonnalisable("NON DEFINI", "ellipse", "gray", "dashed");
             break;
-        }
     }
-
     return id;
 }
