@@ -8,7 +8,7 @@ int main() {
     tableau[1][2] = 3;
     a = tableau[1][2*a];
     a = b;
-    a = printd( b );
+    a = printd(b);
 
     // a = 2;
     // int x;
