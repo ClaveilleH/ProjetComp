@@ -249,7 +249,7 @@ int generer_dot_node(Node *node) {
             break;
 
         case AFFECTATION :
-            id = noeudPersonnalisable(":=", "circle", "black", NULL);
+            id = noeudPersonnalisable(":=", "ellipse", "black", NULL);
             // Partie gauche de l'affectation
             int g = generer_dot_node(node->affectation.variable);
             fleche(id, g);

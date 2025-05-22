@@ -113,6 +113,9 @@ void free_list(NodeList *list);
 void free_table(NodeList **table);
 void free_all();
 
+//try
+int verifier_initialisation_expression(Node *expr);
+
 
 // A ENLEVER
 int hash(char *nom);

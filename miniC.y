@@ -479,8 +479,10 @@ saut	:
 	}
 ;
 
-affectation	:
-		variable '=' expression { 
+affectation	: // try
+		
+		variable '=' expression { // on véifie si expression contient une variable non initialisée
+			if (verifier_initialisation_expression($3)){EMIT_WARNING("Variable utilisée sans être initialisée");}
 			$1->symbole.isInitialized = 1; // on met la variable comme initialisée
 			if ($3->expression.evaluable == 1) {
 				$1->symbole.valeur = $3->expression.valeur; // on affecte la valeur de l'expression à la variable
@@ -494,6 +496,7 @@ affectation	:
 			//! ATTENTION : IL FAUT EVALUER L'EXPRESSION
 			// PENSER A REDUIRE L'EXPRESSION
 		}
+		
 ;
 
 opn_bloc :
@@ -526,7 +529,7 @@ variable	:	// quand on utilise une variable
 			// sinon on leve une erreur
 			Node *result = chercher_symbole($1);
 			if (result == NULL) {
-				size_t alloc_len = strlen("Variable utilisée mais jamais déclarée :") + strlen($1) + 10; // Ajoutez une marge de sécurité
+				size_t alloc_len = strlen("Variable utilisée mais jamais déclarée :") + strlen($1) + 10; // Ajoutez une marge de sécurité // try
 				char *s = malloc(alloc_len);
 				if (s == NULL) {
 					fprintf(stderr, "Erreur : allocation mémoire échouée\n");
@@ -535,9 +538,11 @@ variable	:	// quand on utilise une variable
 				snprintf(s, alloc_len, "Variable utilisée mais jamais déclarée : %s", $1);
 				error(s); // Appel de la fonction error
 			}
-			if (result->type == SYMBOLE && result->symbole.isInitialized == 0) {
-				EMIT_WARNING("Variable '%s' utilisée sans être initialisée", result->symbole.nom);
-			} else if (result->type == FONCTION) {
+			// je crois que ce n'est pas ici qu'il faut tester l'initialisation d'une variable car quand elle est déclarée elle n'est pas forcément initialisée
+			// if (result->type == SYMBOLE && result->symbole.isInitialized == 0) {
+			//	EMIT_WARNING("Variable '%s' utilisée sans être initialisée", result->symbole.nom);
+			// } 
+			 if (result->type == FONCTION) {
 				yyerror("Fonction utilisée comme variable");
 			}
 
