@@ -409,8 +409,8 @@ int verifier_initialisation_expression(Node *expr) {
                 default:
                     return 0;
             }
-        // ne fonctionne pas
-        case APPEL_FONCTION: { // l'idée est de vérifier les paramètres seulement on les initialisent automatiquement à O
+        
+        case APPEL_FONCTION: { // On vérifie les paramètres de l'appel de fonction
             NodeList *args = expr->appel_fonction.liste_expressions;
             while (args) {
                 if (verifier_initialisation_expression(args->node)) return 1;
@@ -418,7 +418,7 @@ int verifier_initialisation_expression(Node *expr) {
             }
             return 0;
         }
-        // ne fonctionne pas
+        
         case ACCES_TABLEAU: { // Il faudra aussi dans un second temps vérifier lors de l'appel d'un tableau si sa dimension et ses indices sont valides
             if (expr->acces_tableau.variable && expr->acces_tableau.variable->symbole.isInitialized == 0) {
                 return 1;

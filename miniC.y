@@ -647,6 +647,7 @@ expression	:
 
 		}
 	| IDENTIFICATEUR '(' liste_expressions ')' 	{ //appel de fonction 
+			
 			// on verifie si la fonction existe
 			// on verifie si le nombre d'arguments est correct
 			// si la fonction est recursive 
@@ -672,6 +673,12 @@ expression	:
 				if (tmp != NULL || tmp2 != NULL) {
 					yyerror("Nombre d'arguments incorrect");
 				}
+				NodeList *indices = $3; // try
+            	while (indices) {
+                	if (verifier_initialisation_expression(indices->node)) {EMIT_WARNING("Variable utilisée sans être initialisée");}
+                	indices = indices->suivant;
+            	}
+            return 0;
 			}
 			$$ = nouveau_node(APPEL_FONCTION);
 			$$->appel_fonction.nom = $1;
