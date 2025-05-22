@@ -18,19 +18,20 @@ typedef enum {
     EXPRESSION,
     AFFECTATION,
     APPEL_FONCTION,
-    ACCES_TABLEAU,
     BLOC,
     TEST, 
+    TABLEAU_ELEM, 
 } NodeType;
-typedef struct NodeList NodeList; // declaration anticipée
 typedef struct Node Node; // declaration anticipée
+typedef struct NodeList NodeList; // declaration anticipée
 
-typedef enum { EXPRESSION_BINAIRE, EXPRESSION_MOINS_UNAIRE, EXPRESSION_PARENTHESE, EXPRESSION_CONSTANTE, } ExpressionType;
+
+typedef enum { EXPRESSION_BINAIRE, EXPRESSION_MOINS_UNAIRE, EXPRESSION_PARENTHESE, EXPRESSION_CONSTANTE, EXPRESSION_TABLEAU, } ExpressionType;
 typedef struct Node { //! est-ce qu'il faut pas faire des nodes pour les expressions separément ?
     NodeType type;
     int id; // id du noeud pour le debug
-    union {
-        struct { char *nom; type_t type; int dimension; int isInitialized; int valeur; int evaluable; } symbole; // changer le nom
+    union { // On peut ajouter le sous-type afin d'indiquer le type du tableau permet de rendre le code du compilateur extensible même si aujourd'hui on ne traite que les entiers
+        struct { char *nom; type_t type; int dimension; int *tailles; int isInitialized; int valeur; int evaluable; } symbole; // changer le nom
         struct { char *nom; type_t type; NodeList *liste_parametres; Node *bloc; int externe; } fonction;
         struct { char *nom; type_t type; } parametre;
 
@@ -65,11 +66,11 @@ typedef struct Node { //! est-ce qu'il faut pas faire des nodes pour les express
         
         struct { char *nom; NodeList *liste_expressions; } appel_fonction;
 
-        struct { Node *variable; NodeList *liste_expressions; } acces_tableau;
-
         struct { NodeList **table_declarations; NodeList *liste_instructions; } bloc;
 
         struct { char *txt; } test;
+
+        struct { char *nom; NodeList *liste_indices; int nb_indices;} elem_tableau;
     };
 } Node;
 
@@ -113,6 +114,7 @@ void free_list(NodeList *list);
 void free_table(NodeList **table);
 void free_all();
 
+// try
 
 // A ENLEVER
 int hash(char *nom);

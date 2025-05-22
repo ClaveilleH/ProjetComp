@@ -76,21 +76,6 @@ int generer_dot_node(Node *node) {
             }
             break;
         }
-        case ACCES_TABLEAU:
-            id = noeudPersonnalisable("TAB", "ellipse", "black", NULL);
-            int nom = noeudPersonnalisable(node->acces_tableau.variable->symbole.nom, "ellipse", "black", NULL);
-            // int nom = generer_dot_node(node->symbole.nom);
-            fleche(id, nom);
-            // indices du tableau
-            NodeList *indice = node->acces_tableau.liste_expressions;
-            while (indice != NULL) {
-                int id_indice = generer_dot_node(indice->node); // affiche la valeur d’indice 
-                fleche(id, id_indice);
-                indice = indice->suivant;
-            }
-
-            break;
-
         case PARAMETRE :
             id = noeudPersonnalisable(node->parametre.nom, "ellipse", "blue", NULL);
             break;
@@ -274,7 +259,6 @@ int generer_dot_node(Node *node) {
         case BLOC :
             id = noeudPersonnalisable("BLOC", "ellipse", "black", NULL);
             
-            
             // Paramètres de l'appel de fonction
             NodeList *instrucBloc = node->bloc.liste_instructions;
             while (instrucBloc) {
@@ -287,6 +271,22 @@ int generer_dot_node(Node *node) {
 
         case TEST :
             id = noeudPersonnalisable(node->test.txt, "ellipse", "black", NULL);
+
+            break;
+
+        
+        case TABLEAU_ELEM:
+            id = noeudPersonnalisable("TAB", "ellipse", "black", NULL);
+            int nom = noeudPersonnalisable(node->symbole.nom, "ellipse", "black", NULL);
+            // int nom = generer_dot_node(node->symbole.nom);
+            fleche(id, nom);
+            // indices du tableau
+            NodeList *indice = node->elem_tableau.liste_indices;
+            while (indice != NULL) {
+                int id_indice = generer_dot_node(indice->node); // affiche la valeur d’indice 
+                fleche(id, id_indice);
+                indice = indice->suivant;
+            }
 
             break;
 

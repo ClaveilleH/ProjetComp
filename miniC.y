@@ -18,11 +18,6 @@ int generer_dot_node(Node *node);
 #define RESET_COLOR "\033[0m"
 #define DEBUG 1
 
-#define EMIT_WARNING(fmt, ...) do { \
-    fprintf(stderr, COLOR_PURPLE "[Warning] " RESET_COLOR fmt "\n", ##__VA_ARGS__); \
-    fprintf(stderr, "          at line %d, near '%s'\n", yylineno, yytext); \
-} while(0)
-
 extern int yylineno;
 extern char *yytext;
 extern FILE *yyin;
@@ -38,7 +33,6 @@ FILE *file;
 
 NodeList *liste_fonctions = NULL; // liste globale des fonctions A SUPP
 Node *current_function = NULL; // fonction courante
-int mode_affectation = 0; // mode déclaration ou pas
 
 
 %}
@@ -47,6 +41,8 @@ int mode_affectation = 0; // mode déclaration ou pas
     int entier;
     char *chaine;
 	type_t type;
+
+
 
 	struct Node *node;
 	struct NodeList *node_list;
@@ -83,7 +79,7 @@ int mode_affectation = 0; // mode déclaration ou pas
 
 %type <node> declarateur parm fonction variable affectation instruction selection saut condition expression bloc
 %type <node> iteration ouverture_fonction
-%type <node_list> liste_declarateurs declaration liste_parms liste_fonctions liste_instructions liste_expressions
+%type <node_list> liste_declarateurs declaration liste_parms liste_fonctions liste_instructions liste_expressions liste_indices
 %type <node_table> liste_declarations 
 
 %%
@@ -203,16 +199,7 @@ declaration	:
 			$$ = $2;
 		}
 		// Déclaration avec initialisation
-		|type liste_declarateurs '=' expression ';' {
-			$$ = $2;
-			NodeList *tmp = $2;
-			while (tmp->suivant != NULL) { // on va a la derniere variable
-				tmp = tmp->suivant;
-			}
-			tmp->node->symbole.valeur = $4->expression.valeur; // on affecte la valeur de l'expression à la variable
-			tmp->node->symbole.evaluable = $4->expression.evaluable; // on met la variable comme évaluable
-			tmp->node->symbole.isInitialized = 1; // on met la variable comme initialisée
-		}
+		|type liste_declarateurs '=' expression ';' {$$ = $2; }
 ;
 
 liste_declarateurs	:	
@@ -223,6 +210,7 @@ liste_declarateurs	:
 		}
 	|	declarateur {
 		$$ = nouveau_node_list($1);
+		// printf(COLOR_GREEN "2 : Node LIST %d\n" RESET_COLOR, $$->id);
 	}
 ;
 
@@ -245,17 +233,44 @@ declarateur:
 			
 			ajouter_variable($$); // on ajoute la variable à la table de symboles courante
 			//? mettre la verification ici ?
-		}
-	|	declarateur '[' CONSTANTE ']' {
-			// on modifie le noeud de la déclaration de variable
-			$$ = $1;
-			$$->symbole.type = TABLEAU;
-			$$->symbole.dimension += 1; // on incremente la dimension du tableau
-			// $$->symbole.taille = $3; // taille du tableau
-			//la taille ne sert a rien pour l'instant
-			// il faut faire une liste de tailles selon la dimension
-		}
+		} 
+
+	|	IDENTIFICATEUR liste_indices {
+		$$ = nouveau_node(TABLEAU_ELEM);
+		$$->symbole.type = ENTIER;
+		$$->symbole.valeur = 0; // valeur initiale à 0 
+        $$->symbole.nom = $1;        // nom de la variable
+		$$->symbole.isInitialized = 0;
+		$$->symbole.evaluable = 0;
+		$$->elem_tableau.liste_indices = $2;
+        // $$->symbole.dimension = 1; // liste des dimensions
+		// $$->symbole.taille = 0; // taille du tableau
+
+    }
 ;
+// modification de la grammaire afin de récuprérer les insices avec une NodeList
+
+liste_indices:
+    '[' CONSTANTE ']' {
+        Node* n = nouveau_node(EXPRESSION);
+        n->expression.valeur = $2;
+        n->expression.evaluable = 1;
+        n->expression.type = EXPRESSION_CONSTANTE;
+        $$ = nouveau_node_list(n);
+		
+    }
+  | liste_indices '[' CONSTANTE ']' {
+        Node* n = nouveau_node(EXPRESSION);
+        n->expression.valeur = $3;
+        n->expression.evaluable = 1;
+        n->expression.type = EXPRESSION_CONSTANTE;
+        append_node($1, n);
+		$$ = $1; 
+    }
+;
+
+
+
 
 ouverture_fonction:
 	{
@@ -521,7 +536,20 @@ bloc :
 
 
 variable	:	// quand on utilise une variable
-		IDENTIFICATEUR { /*$$ = inserer($1);*/ //jpense pas qu'il faille utiliser ca ici
+		// tableau 
+		IDENTIFICATEUR liste_indices {
+        	
+			$$ = nouveau_node(TABLEAU_ELEM);
+			$$->symbole.type = ENTIER;
+			$$->symbole.valeur = 0; // valeur initiale à 0 
+        	$$->symbole.nom = $1;        // nom de la variable
+			$$->symbole.isInitialized = 0;
+			$$->symbole.evaluable = 0;
+			$$->elem_tableau.liste_indices = $2;
+        
+        }
+
+		| IDENTIFICATEUR { /*$$ = inserer($1);*/ //jpense pas qu'il faille utiliser ca ici
 			// il faut verif si ca existe déjà
 			// sinon on leve une erreur
 			Node *result = chercher_symbole($1);
@@ -535,36 +563,29 @@ variable	:	// quand on utilise une variable
 				snprintf(s, alloc_len, "Variable utilisée mais jamais déclarée : %s", $1);
 				error(s); // Appel de la fonction error
 			}
-			if (result->type == SYMBOLE && result->symbole.isInitialized == 0) {
-				EMIT_WARNING("Variable '%s' utilisée sans être initialisée", result->symbole.nom);
+			if (result->type == SYMBOLE) {
+				// on verifie si la variable est initialisée
+				if (result->symbole.isInitialized == 0) {
+					size_t alloc_len = strlen("Variable utilisée mais jamais initialisée :") + strlen($1) + 10; // Ajoutez une marge de sécurité
+					char *s = malloc(alloc_len);
+					if (s == NULL) {
+						fprintf(stderr, "Erreur : allocation mémoire échouée\n");
+						exit(EXIT_FAILURE);
+					}
+					snprintf(s, alloc_len, "Variable utilisée mais jamais initialisée : %s", $1);
+					warn(s); // Appel de la fonction warn
+				}
 			} else if (result->type == FONCTION) {
 				yyerror("Fonction utilisée comme variable");
 			}
 
 			$$ = result;
-		}
-	|	variable '[' expression ']' {
-		$$ = $1;
-		// on verifie si la variable est un acces tableau ou un symbole
-		if ($1->type == SYMBOLE) {
-			// on verifie si la variable est un tableau
-			if ($1->symbole.type != TABLEAU) {
-				yyerror("Variable non déclarée comme tableau");
-			}
-			$$ = nouveau_node(ACCES_TABLEAU);
-			$$->acces_tableau.variable = $1;
-			$$->acces_tableau.liste_expressions = nouveau_node_list($3);
-		} else if ($1->type == ACCES_TABLEAU) {
-			$$ = $1;
-			// on ajoute l'expression à la liste d'expressions
-			append_node($1->acces_tableau.liste_expressions, $3);
-		} else {
-			yyerror("Variable non déclarée comme tableau");
-		}
+		} 
+
+		
+	;
 
 
-	}
-;
 
 expression	:		
 		'(' expression ')' 			  			{ 
@@ -603,9 +624,8 @@ expression	:
 			int res;
 			int eval;
 			evaluer_expression($3, &res, &eval);
-			if (eval && res == 0) {
-				// warn("Division par zéro");
-				EMIT_WARNING("Division par zéro");
+			if ($3->expression.evaluable && $3->expression.valeur == 0) {
+				warn("Division par zéro");
 			}
 			$$ = construire_expr_binaire($1, $3, "/");
 			// $$ = reduire_expression($$);
