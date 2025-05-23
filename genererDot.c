@@ -7,6 +7,10 @@
 static int compteur = 0;
 static FILE *f_dot = NULL;
 
+
+// Variable globale pour compter les cases
+int compteurCase;
+
 void ouvrir_graphe() {
     f_dot = fopen("graphe.dot", "w");
     if (!f_dot) {
@@ -128,6 +132,7 @@ int generer_dot_node(Node *node) {
             break;
         
         case SWITCH_NODE :
+            compteurCase = 0;
             id = noeudPersonnalisable("SWITCH", "ellipse", "black", NULL);
             int expr = generer_dot_node(node->switch_node.expression);
             fleche(id, expr);
@@ -143,28 +148,35 @@ int generer_dot_node(Node *node) {
             break;
 
         case CASE_NODE :
-
             if (node->case_node.constante->type == SYMBOLE) {
                 snprintf(label, sizeof(label), "%s", node->case_node.constante->symbole.nom);
+            } else {
+                snprintf(label, sizeof(label), "CASE %d", compteurCase);
             }
-            else {
-                snprintf(label, sizeof(label), "CASE %d",node->case_node.constante->expression.valeur);
-            }
+
             id = noeudPersonnalisable(label, "ellipse", "black", NULL);
 
-            NodeList *caseInstructions = node->case_node.liste_instructions;
-            while (caseInstructions != NULL) {
-                if (caseInstructions->node) {
-                    int id_case = generer_dot_node(caseInstructions->node);
-                    fleche(id, id_case);
+            snprintf(label, sizeof(label), "%d", node->case_node.constante->expression.valeur);
+            int idConstante = noeudPersonnalisable(label, "ellipse", "black", NULL);
+            fleche(id, idConstante);
+
+
+            NodeList *instrs = node->case_node.liste_instructions;
+            while (instrs != NULL) {
+                if (instrs->node) {
+                    int id_instr = generer_dot_node(instrs->node);
+                    fleche(id, id_instr);
                 }
-                caseInstructions = caseInstructions->suivant;
+                instrs = instrs->suivant;
             }
+            compteurCase++ ; 
+
             break;
+                
 
         case DEFAULT_NODE :
             id = noeudPersonnalisable("case default", "ellipse", "black", NULL);
-            NodeList *defaultInstructions = node->case_node.liste_instructions;
+            NodeList *defaultInstructions = node->default_node.liste_instructions;
             while (defaultInstructions != NULL) {
                 if (defaultInstructions->node) {
                     int id_case = generer_dot_node(defaultInstructions->node);

@@ -1,5 +1,7 @@
-extern int printd( int i );
-/*
+extern int printd(int i);
+
+/* Cas d'un switch difficile */
+
 int main() {
     int b;
     int a;
@@ -78,6 +80,7 @@ int main(int a) {
         printd(a);
         break;
     }
+    return 0;
 }
 
 void aqsd() {
