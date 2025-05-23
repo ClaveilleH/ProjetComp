@@ -95,9 +95,9 @@ int mode_affectation = 0; // mode déclaration ou pas
 %type <type> type
 
 %type <node> declarateur parm fonction variable affectation instruction selection saut condition expression bloc
-%type <node> iteration ouverture_fonction switch_instructions
+%type <node> iteration ouverture_fonction switch_default switch_case
 %type <node_list> liste_declarateurs declaration liste_parms liste_fonctions liste_instructions liste_expressions
-%type <node_list> dimension_utilisation switch_liste_instructions
+%type <node_list> dimension_utilisation switch_liste_instructions liste_case
 %type <node_table> liste_declarations 
 
 %%
@@ -429,22 +429,37 @@ selection	:
 			$$->switch_node.liste_instructions = $7;
 			in_switch = 0;
 		}
-	
-	
 ;
 
 switch_liste_instructions :
-		switch_liste_instructions switch_instructions {
+		liste_case switch_default {
 			// on ajoute switch_instructions a la fin de la liste
 			append_node($1, $2);
 			$$ = $1;
 		}
-	|	switch_instructions {
+	|	liste_case {
+			$$ = $1;
+		}
+	|	switch_default {
 			$$ = nouveau_node_list($1);
 		}
 ;
 
-switch_instructions :
+liste_case :
+		liste_case switch_case {
+			// on ajoute switch_case a la fin de la liste
+			// append_node($1, $2);
+			if (append_node($1, $2)) {
+				EMIT_ERROR("Case avec la même constante déjà déclarée : %d", $2->case_node.constante->expression.valeur);
+			}
+			$$ = $1;
+		}
+	|	switch_case {
+			$$ = nouveau_node_list($1);
+		}
+;
+
+switch_case :
 		CASE CONSTANTE ':' {in_case = 1;} liste_instructions {
 			if (in_switch == 0) {
 				EMIT_ERROR("CASE hors d'un switch");
@@ -458,15 +473,17 @@ switch_instructions :
 			$$->case_node.constante = cst;
 			in_case = 0;
 		}
-	|	DEFAULT ':' liste_instructions {
+;
+
+switch_default :
+		DEFAULT ':' liste_instructions {
 			if (in_switch == 0) {
 				EMIT_ERROR("DEFAULT hors d'un switch");
 			}
 			$$ = nouveau_node(DEFAULT_NODE);
 			$$->default_node.liste_instructions = $3;
-
-			
 		}
+;
 
 /*
 |	SWITCH '(' expression ')' { in_switch = 1; } instruction				{

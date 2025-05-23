@@ -64,6 +64,9 @@ int tst() {
 
 int main(int a) {
     switch (a){
+    // default:
+    //     printd(a);
+    //     break;
     case 1:
     case 2:
         printd(a);

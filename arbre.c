@@ -232,6 +232,21 @@ int append_node(NodeList *list, Node *node) {
                 return 1; // Erreur d'ajout
             }
         }
+        if (temp->node->type == PARAMETRE && node->type == PARAMETRE) { // si le type est PARAMETRE
+            if (strcmp(temp->node->parametre.nom, node->parametre.nom) == 0) { // Vérifie si le nom est déjà présent
+                return 1; // Erreur d'ajout
+            }
+        }
+        if (temp->node->type == FONCTION && node->type == FONCTION) { // si le type est FONCTION
+            if (strcmp(temp->node->fonction.nom, node->fonction.nom) == 0) { // Vérifie si le nom est déjà présent
+                return 1; // Erreur d'ajout
+            }
+        }
+        if (temp->node->type == CASE_NODE && node->type == CASE_NODE) { // si le type est CASE_NODE
+            if (temp->node->case_node.constante->expression.valeur == node->case_node.constante->expression.valeur ) { // Vérifie si le nom est déjà présent
+                return 1; // Erreur d'ajout
+            }
+        }
         temp = temp->suivant;
     }
     if (temp->node->type == SYMBOLE && node->type == SYMBOLE) { // si le type est SYMBOLE
@@ -246,6 +261,11 @@ int append_node(NodeList *list, Node *node) {
     }
     if (temp->node->type == FONCTION && node->type == FONCTION) { // si le type est FONCTION
         if (strcmp(temp->node->fonction.nom, node->fonction.nom) == 0) { // Vérifie si le nom est déjà présent
+            return 1; // Erreur d'ajout
+        }
+    }
+    if (temp->node->type == CASE_NODE && node->type == CASE_NODE) { // si le type est CASE_NODE
+        if (temp->node->case_node.constante->expression.valeur == node->case_node.constante->expression.valeur ) { // Vérifie si le nom est déjà présent
             return 1; // Erreur d'ajout
         }
     }
@@ -496,7 +516,7 @@ NodePile *get_pile() {
 
 void afficher_instructions2(char *header, NodeList *list) {
     if (list == NULL) {
-        printf("Aucune instruction\n");
+        // printf("Aucune instruction\n");
         return;
     }
     while (list != NULL) {
