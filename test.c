@@ -58,5 +58,5 @@ void qsd() {
     */
 
 int main() {
-
+    int a, b;
 }
