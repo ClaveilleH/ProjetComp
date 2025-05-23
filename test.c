@@ -1,79 +1,65 @@
-extern int printd( int i );
-/*
+extern int printd(int i);
+
+/* Cas d'un switch difficile */
+
 int main() {
-    int b;
-    int a;
-    int tableau[10][12];
-    // int a;
-    tableau[a*2][tableau[1][2]];
-    tableau[1][2] = 3;
-    // a = tableau[1][2][5];
-    // a = a[1];
-    a = 1;
-    a = tableau[1][2*a];
-    a = b;
-    a = printd(b);
+    int jour, ferie;
 
-    // a = 2;
-    // int x;
-    // int y;
-    // x = 1;
-    // y = 1 / 2 + 1 * 3 & 4 | 5 - 6 *(-7) << 8 >> 9;
-    // printf("%d\n", y);
-}
+    switch (jour) {
+        case 1:
+        case 2:
+        case 3:
+            if (jour == 3) {
+                printd(300);
+                break;
+            }
+            printd(100 + jour);
+            break;
 
-int a(int a, int b) {
-    // a = c;
-    return a + b;
-}
+        case 4:
+            printd(400);
+            if (ferie == ferie) break;
 
-// int m(int a, int b) {
-//     int c;
-//     a = printd(a);
-//     switch (a) {
-//         case 1:
-//             c = 1;
-//             c = 2;
-//             break;
-//         case 2:
-//             c = 2;
-//             break;
-//         default:
-//             c = 3;
-//             break;
-//     }
-//     // a
-//     // a = a(a, b, c);
-// }
+        case 5:
+            printd(500);
+            break;
 
-// void aaaa(){
-//     int a, a, n;
-// }
+        case 6:
+        case 7:
+            printd(jour * 10);
+            break;
 
-void qsd() {
-    int a,b,c;
-    int d;
-    int e, f, g;
-}
-    */
-
-int tst() {
-    int a, b;
-}
-
-
-int main(int a) {
-    switch (a){
-    // default:
-    //     printd(a);
-    //     break;
-    case 1:
-    case 2:
-        printd(a);
-        break;
-    case 2:
-        break;
-    default:
-        break;
+        default:
+            break;
     }
+
+
+    switch (jour) {
+        case 1:
+        case 2:
+        case 3:
+            if (jour == 3) {
+                printd(300);
+                break;
+            }
+            printd(100 + jour);
+            break;
+
+        case 4:
+            printd(400);
+            if (ferie == ferie) break;
+
+        case 5:
+            printd(500);
+            break;
+
+        case 6:
+        case 7:
+            printd(jour * 10);
+            break;
+
+        default:
+            break;
+    }
+    return 0;
 }
