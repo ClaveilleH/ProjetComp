@@ -1,4 +1,4 @@
-// extern int printd( int i );
+extern int printd( int i );
 /*
 int main() {
     int b;
@@ -57,6 +57,20 @@ void qsd() {
 }
     */
 
-int main() {
+int tst() {
     int a, b;
+}
+
+
+int main(int a) {
+    switch (a){
+    case 1:
+    case 2:
+        printd(a);
+        break;
+    case 2:
+        break;
+    default:
+        break;
+    }
 }

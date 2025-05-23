@@ -658,16 +658,19 @@ void afficher_node2(char *header, Node *node) {
         case SWITCH_NODE :
             printf("%s├── Switch :\n", header);
             afficher_node2(header2, node->switch_node.expression);
-            afficher_node2(header2, node->switch_node.instruction);
+            // afficher_node2(header2, node->switch_node.instruction);
+            afficher_instructions2(header2, node->switch_node.liste_instructions);
             break;
         case CASE_NODE :
             printf("%s├── Case :\n", header);
             afficher_node2(header2, node->case_node.constante);
-            afficher_node2(header2, node->case_node.instruction);
+            // afficher_node2(header2, node->case_node.instruction);
+            afficher_instructions2(header2, node->case_node.liste_instructions);
             break;
         case DEFAULT_NODE :
             printf("%s├── Default :\n", header);
-            afficher_node2(header2, node->default_node.instruction);
+            // afficher_node2(header2, node->default_node.instruction);
+            afficher_instructions2(header2, node->default_node.liste_instructions);
             break;
         case FOR_NODE :
             printf("%s├── For :\n", header);

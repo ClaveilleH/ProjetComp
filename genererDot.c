@@ -131,8 +131,9 @@ int generer_dot_node(Node *node) {
             id = noeudPersonnalisable("SWITCH", "ellipse", "black", NULL);
             int expr = generer_dot_node(node->switch_node.expression);
             fleche(id, expr);
-            int instrSwitch = generer_dot_node(node->switch_node.instruction);
-            fleche(id, instrSwitch);
+            // int instrSwitch = generer_dot_node(node->switch_node.instruction);
+            // fleche(id, instrSwitch);
+            // maintenant c'est une liste d'instructions
             break;
 
         case CASE_NODE :
@@ -145,16 +146,16 @@ int generer_dot_node(Node *node) {
             }
             id = noeudPersonnalisable(label, "ellipse", "black", NULL);
 
-            int instrCase = generer_dot_node(node->case_node.instruction);
-            fleche(id, instrCase);
+            // int instrCase = generer_dot_node(node->case_node.instruction);
+            // fleche(id, instrCase);
             break;
 
         case DEFAULT_NODE :
             id = noeudPersonnalisable("case default", "ellipse", "black", NULL);
-            if (node->default_node.instruction) {
-                int instrDefault = generer_dot_node(node->default_node.instruction);
-                fleche(id, instrDefault);
-            }
+            // if (node->default_node.instruction) {
+            //     int instrDefault = generer_dot_node(node->default_node.instruction);
+            //     fleche(id, instrDefault);
+            // }
             break;
 
         case FOR_NODE :

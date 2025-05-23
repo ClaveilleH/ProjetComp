@@ -37,9 +37,12 @@ typedef struct Node { //! est-ce qu'il faut pas faire des nodes pour les express
         struct { Node *condition; Node *instruction; } if_node;
         struct { Node *condition; Node *instruction; Node *instruction_else; } if_else_node;
 
-        struct { Node *expression; Node *instruction; } switch_node;
-        struct { Node *constante; Node *instruction; } case_node;
-        struct { Node *instruction; } default_node;
+        // struct { Node *expression; Node *instruction; } switch_node;
+        struct { Node *expression; NodeList *liste_instructions; } switch_node;
+        // struct { Node *constante; Node *instruction; } case_node;
+        struct { Node *constante; NodeList *liste_instructions ; } case_node;
+        // struct { Node *instruction; } default_node;
+        struct { NodeList *liste_instructions ; } default_node;
 
         struct { Node *init; Node *condition; Node *incr; Node *instruction; } for_node;
         struct { Node *condition; Node *instruction; } while_node;

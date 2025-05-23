@@ -16,7 +16,7 @@ int generer_dot_node(Node *node);
 #define COLOR_PURPLE "\033[35m"
 #define COLOR_GREEN "\033[32m"
 #define RESET_COLOR "\033[0m"
-#define DEBUG 0
+#define DEBUG 1
 
 #define EMIT_WARNING(fmt, ...) do { \
     fprintf(stderr, COLOR_PURPLE "[Warning] " RESET_COLOR fmt "\n", ##__VA_ARGS__); \
@@ -95,9 +95,9 @@ int mode_affectation = 0; // mode déclaration ou pas
 %type <type> type
 
 %type <node> declarateur parm fonction variable affectation instruction selection saut condition expression bloc
-%type <node> iteration ouverture_fonction 
+%type <node> iteration ouverture_fonction switch_instructions
 %type <node_list> liste_declarateurs declaration liste_parms liste_fonctions liste_instructions liste_expressions
-%type <node_list> dimension_utilisation
+%type <node_list> dimension_utilisation switch_liste_instructions
 %type <node_table> liste_declarations 
 
 %%
@@ -423,13 +423,62 @@ selection	:
 			$$->if_else_node.condition = $3;
 			$$->if_else_node.instruction_else = $7;
 		}
-	|	SWITCH '(' expression ')' { in_switch = 1; } instruction				{
+	|	SWITCH '(' expression ')' { in_switch = 1; } '{' switch_liste_instructions '}'	{
+			$$ = nouveau_node(SWITCH_NODE);
+			$$->switch_node.expression = $3;
+			$$->switch_node.liste_instructions = $7;
+			in_switch = 0;
+		}
+	
+	
+;
+
+switch_liste_instructions :
+		switch_liste_instructions switch_instructions {
+			// on ajoute switch_instructions a la fin de la liste
+			append_node($1, $2);
+			$$ = $1;
+		}
+	|	switch_instructions {
+			$$ = nouveau_node_list($1);
+		}
+;
+
+switch_instructions :
+		CASE CONSTANTE ':' {in_case = 1;} liste_instructions {
+			if (in_switch == 0) {
+				EMIT_ERROR("CASE hors d'un switch");
+			}
+			$$ = nouveau_node(CASE_NODE);
+			$$->case_node.liste_instructions = $5;
+			Node *cst = nouveau_node(EXPRESSION);
+			cst->expression.type = EXPRESSION_CONSTANTE;
+			cst->expression.valeur = $2;
+			cst->expression.evaluable = 1;
+			$$->case_node.constante = cst;
+			in_case = 0;
+		}
+	|	DEFAULT ':' liste_instructions {
+			if (in_switch == 0) {
+				EMIT_ERROR("DEFAULT hors d'un switch");
+			}
+			$$ = nouveau_node(DEFAULT_NODE);
+			$$->default_node.liste_instructions = $3;
+
+			
+		}
+
+/*
+|	SWITCH '(' expression ')' { in_switch = 1; } instruction				{
 			$$ = nouveau_node(SWITCH_NODE);
 			$$->switch_node.expression = $3;
 			$$->switch_node.instruction = $6;
 			in_switch = 0;
 		}
-	|	CASE CONSTANTE ':' {in_case = 1;} instruction						{
+*/
+
+/*
+	|	CASE CONSTANTE ':' {in_case = 1;} instruction {
 			$$ = nouveau_node(CASE_NODE);
 			$$->case_node.instruction = $5;
 			Node *cst = nouveau_node(EXPRESSION);
@@ -449,7 +498,7 @@ selection	:
 			$$ = nouveau_node(DEFAULT_NODE);
 			$$->default_node.instruction = $3;
 		}
-;
+		*/
 
 saut	:	
 		BREAK ';'	{
