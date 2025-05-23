@@ -131,9 +131,15 @@ int generer_dot_node(Node *node) {
             id = noeudPersonnalisable("SWITCH", "ellipse", "black", NULL);
             int expr = generer_dot_node(node->switch_node.expression);
             fleche(id, expr);
-            // int instrSwitch = generer_dot_node(node->switch_node.instruction);
-            // fleche(id, instrSwitch);
-            // maintenant c'est une liste d'instructions
+            
+            NodeList *casesListe = node->switch_node.liste_instructions;
+            while (casesListe != NULL) {
+                if (casesListe->node) {
+                    int id_case = generer_dot_node(casesListe->node);
+                    fleche(id, id_case);
+                }
+                casesListe = casesListe->suivant;
+            }
             break;
 
         case CASE_NODE :
@@ -146,16 +152,26 @@ int generer_dot_node(Node *node) {
             }
             id = noeudPersonnalisable(label, "ellipse", "black", NULL);
 
-            // int instrCase = generer_dot_node(node->case_node.instruction);
-            // fleche(id, instrCase);
+            NodeList *caseInstructions = node->case_node.liste_instructions;
+            while (caseInstructions != NULL) {
+                if (caseInstructions->node) {
+                    int id_case = generer_dot_node(caseInstructions->node);
+                    fleche(id, id_case);
+                }
+                caseInstructions = caseInstructions->suivant;
+            }
             break;
 
         case DEFAULT_NODE :
             id = noeudPersonnalisable("case default", "ellipse", "black", NULL);
-            // if (node->default_node.instruction) {
-            //     int instrDefault = generer_dot_node(node->default_node.instruction);
-            //     fleche(id, instrDefault);
-            // }
+            NodeList *defaultInstructions = node->case_node.liste_instructions;
+            while (defaultInstructions != NULL) {
+                if (defaultInstructions->node) {
+                    int id_case = generer_dot_node(defaultInstructions->node);
+                    fleche(id, id_case);
+                }
+                defaultInstructions = defaultInstructions->suivant;
+            }
             break;
 
         case FOR_NODE :
