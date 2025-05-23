@@ -87,8 +87,9 @@ int mode_affectation = 0; // mode déclaration ou pas
 %type <type> type
 
 %type <node> declarateur parm fonction variable affectation instruction selection saut condition expression bloc
-%type <node> iteration ouverture_fonction
+%type <node> iteration ouverture_fonction 
 %type <node_list> liste_declarateurs declaration liste_parms liste_fonctions liste_instructions liste_expressions
+%type <node_list> dimension_utilisation
 %type <node_table> liste_declarations 
 
 %%
@@ -443,7 +444,9 @@ saut	:
 affectation	: // try
 		
 		variable '=' expression { // on véifie si expression contient une variable non initialisée
-			if (verifier_initialisation_expression($3)){EMIT_WARNING("Variable utilisée sans être initialisée");}
+			if (verifier_initialisation_expression($3)){
+				EMIT_WARNING("Variable utilisée sans être initialisée : %s", $3->symbole.nom);
+			}
 			$1->symbole.isInitialized = 1; // on met la variable comme initialisée
 			if ($3->expression.evaluable == 1) {
 				$1->symbole.valeur = $3->expression.valeur; // on affecte la valeur de l'expression à la variable
@@ -495,37 +498,51 @@ variable	:	// quand on utilise une variable
 				}
 				EMIT_ERROR("Variable utilisée mais jamais déclarée : %s", $1);
 			}
-			// je crois que ce n'est pas ici qu'il faut tester l'initialisation d'une variable car quand elle est déclarée elle n'est pas forcément initialisée
-			// if (result->type == SYMBOLE && result->symbole.isInitialized == 0) {
-			//	EMIT_WARNING("Variable '%s' utilisée sans être initialisée", result->symbole.nom);
-			// } 
 			 if (result->type == FONCTION) {
 				EMIT_ERROR("Fonction utilisée comme variable");
 			}
 			$$ = result;
 		}
-	|	variable '[' expression ']' {
-		$$ = $1;
-		// on verifie si la variable est un acces tableau ou un symbole
-		if ($1->type == SYMBOLE) {
-			// on verifie si la variable est un tableau
-			if ($1->symbole.type != TABLEAU) {
-				EMIT_ERROR("Variable non déclarée comme tableau : %s", $1->symbole.nom);
-			}
-			$$ = nouveau_node(ACCES_TABLEAU);
-			$$->acces_tableau.variable = $1;
-			$$->acces_tableau.liste_expressions = nouveau_node_list($3);
-		} else if ($1->type == ACCES_TABLEAU) {
-			$$ = $1;
-			// on ajoute l'expression à la liste d'expressions
-			append_node($1->acces_tableau.liste_expressions, $3);
-		} else {
-			yyerror("Variable non déclarée comme tableau");
+	|	IDENTIFICATEUR dimension_utilisation {
+		// on verifie si la variable existe
+		int cpt = 0;
+		Node *result = chercher_symbole($1);
+		if (result == NULL) {
+			EMIT_ERROR("Variable utilisée mais jamais déclarée : %s", $1);
 		}
+		if (result->type == FONCTION) {
+			EMIT_ERROR("Fonction utilisée comme variable : %s", $1);
+		}
+		if (result->symbole.type != TABLEAU) {
+			EMIT_ERROR("Variable int utilisée comme tableau : %s", $1);
+		}
+		NodeList *tmp = $2;
+		while (tmp != NULL) {
+			cpt++;
+			tmp = tmp->suivant;
+		}
+		if (cpt != result->symbole.dimension) {
+			EMIT_ERROR("Nombre de dimensions incorrect : %s", $1);
+		}
+		$$ = nouveau_node(ACCES_TABLEAU);
+		$$->acces_tableau.variable = result;
+		$$->acces_tableau.liste_expressions = $2;
+		
 
 
 	}
 ;
+
+dimension_utilisation:
+		dimension_utilisation '[' expression ']' {
+			$$ = $1;
+			// on ajoute l'expression à la liste d'expressions
+			append_node($$, $3);
+		}
+	|	'[' expression ']' {
+			$$ = nouveau_node_list($2);
+		}
+
 
 expression	:		
 		'(' expression ')' 			  			{ 
@@ -611,7 +628,9 @@ expression	:
 				}
 				NodeList *indices = $3; // try
             	while (indices) {
-                	if (verifier_initialisation_expression(indices->node)) {EMIT_WARNING("Variable utilisée sans être initialisée");}
+                	if (verifier_initialisation_expression(indices->node)) {
+						EMIT_WARNING("Variable utilisée sans être initialisée : %s", indices->node->symbole.nom);
+					}
                 	indices = indices->suivant;
             	}
 			}
