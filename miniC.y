@@ -778,10 +778,6 @@ condition	:
 		NOT '(' condition ')' { 
 			printf("Condition NOT\n"); 
 		}
-	|	condition binary_rel condition %prec REL {
-		printf("Condition relationnelle\n");
-		//JSP CE QUE C'EST
-	}
 	|	'(' condition ')'  {
 		printf("Condition\n"); 
 	}
@@ -792,13 +788,6 @@ condition	:
 			$$->condition_binaire.droite = $3;
 			$$->condition_binaire.operateur = $2;
 	}
-;
-
-
-
-binary_rel	:	
-		LAND
-	|	LOR
 ;
 
 binary_comp	:	

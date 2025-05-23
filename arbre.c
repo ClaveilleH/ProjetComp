@@ -550,9 +550,7 @@ int evaluer_expression(Node *node, int *resultat, int *evaluable) {
             *evaluable = 0;
             return 1; // Erreur d'évaluation
         }
-        fprintf(stderr, "Erreur : le noeud n'est pas une expression\n");
-        exit(1); //! TODO: gérer l'erreur
-        /* Si il n'y a pas de probleme de grammaire normalement elle arrive jamais*/
+        return 1; // Erreur d'évaluation
     }
     if (node->expression.type == EXPRESSION_CONSTANTE) {
         node->expression.evaluable = 1;

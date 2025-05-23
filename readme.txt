@@ -60,6 +60,11 @@ Code miniC :
         return x;
     }
 
+Fichiers test :
+    Dans le dossier Tests/
+    Contient les tests fournis et apportés par certains etudiants
+    Ainsi que ceux créés pour valider nos modifications et corrections de bugs
+
 Ce code produit un arbre abstrait représentant la structure du programme.
 
 Erreurs gérées
@@ -83,4 +88,3 @@ Auteurs
 CLAVEILLE Hugo
 CUVILLEZ Fiona
 Projet de compilation 2025 — Université de Nice Côte d'Azur
-
