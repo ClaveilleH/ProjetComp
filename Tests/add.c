@@ -2,6 +2,8 @@ extern int printd( int i );
 
 int main() {
   int i,j;
+  printd(j+1);
+
   i = 45000;
   j = -123;
   printd(i+j);

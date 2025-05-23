@@ -385,6 +385,67 @@ Node *chercher_symbole(char *nom) {
     return NULL; // Symbole non trouvé
 }
 
+// try
+//On teste si une variable est initialisée avant d'être utilisée
+int verifier_initialisation_expression(Node *expr) {
+    if (expr == NULL) return 0;
+
+    switch (expr->type) {
+        case SYMBOLE:
+            return (expr->symbole.isInitialized == 0);
+
+        case EXPRESSION:
+            switch (expr->expression.type) {
+                case EXPRESSION_CONSTANTE:
+                    return 0;
+
+                case EXPRESSION_PARENTHESE:
+                case EXPRESSION_MOINS_UNAIRE:
+                    return verifier_initialisation_expression(expr->expression.expression);
+
+                case EXPRESSION_BINAIRE:
+                    return 
+                        verifier_initialisation_expression(expr->expression.gauche) ||
+                        verifier_initialisation_expression(expr->expression.droite);
+
+                default:
+                    return 0;
+            }
+        
+        case APPEL_FONCTION: { // On vérifie les paramètres de l'appel de fonction
+            NodeList *args = expr->appel_fonction.liste_expressions;
+            while (args) {
+                if (verifier_initialisation_expression(args->node)) return 1;
+                args = args->suivant;
+            }
+            return 0;
+        }
+        
+        case ACCES_TABLEAU: { // Il faudra aussi dans un second temps vérifier lors de l'appel d'un tableau si sa dimension et ses indices sont valides
+            if (expr->acces_tableau.variable && expr->acces_tableau.variable->symbole.isInitialized == 0) {
+                return 1;
+            }
+
+            NodeList *indices = expr->acces_tableau.liste_expressions;
+            while (indices) {
+                if (verifier_initialisation_expression(indices->node)) return 1;
+                indices = indices->suivant;
+            }
+            return 0;
+        }
+
+        case CONDITION_BINAIRE:
+            return verifier_initialisation_expression(expr->condition_binaire.gauche) ||
+                   verifier_initialisation_expression(expr->condition_binaire.droite);
+
+        default:
+            return 0;
+    }
+}
+
+
+
+
 NodePile *get_pile() {
     return pile_variables;
 }
