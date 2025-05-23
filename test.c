@@ -1,5 +1,5 @@
 extern int printd( int i );
-
+/*
 int main() {
     int b;
     int a;
@@ -25,4 +25,23 @@ int main() {
 int a(int a, int b) {
     // a = c;
     return a + b;
+}*/
+
+int m(int a, int b) {
+    int c;
+    a = printd(a);
+    switch (a) {
+        case 1:
+            c = 1;
+            c = 2;
+            break;
+        case 2:
+            c = 2;
+            break;
+        default:
+            c = 3;
+            break;
+    }
+    // a
+    // a = a(a, b, c);
 }

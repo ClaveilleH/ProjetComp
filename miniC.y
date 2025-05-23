@@ -36,7 +36,6 @@ extern FILE *yyin;
 int yylex(void);       
 void yyerror(char *s);
 void error(char *s);
-void warn(char *s);
 void yylex_destroy(void);
 
 FILE *file;
@@ -171,7 +170,6 @@ liste_declarations	:
 					NodeList *tmp2 = $$[h];
 					while (tmp2 != NULL) { // on verifie si la variable existe déjà
 						if (strcmp(tmp2->node->symbole.nom, tmp->node->symbole.nom) == 0) {
-							// yyerror("Variable already declared in this scope");
 							EMIT_ERROR("Variable already declared in this scope");
 						}
 						tmp2 = tmp2->suivant;
@@ -423,20 +421,20 @@ saut	:
 			$$ = nouveau_node(RETURN_NODE);
 			$$->return_node.expression = NULL;
 			if (current_function == NULL) {
-				yyerror("RETURN sans valeur dans une fonction void");
+				EMIT_ERROR("RETURN sans valeur dans une fonction void");
 			}
 			if (current_function->fonction.type == ENTIER) {
-				yyerror("RETURN sans valeur dans une fonction int");
+				EMIT_ERROR("RETURN sans valeur dans une fonction int");
 			}
 	}
 	|	RETURN expression ';'	{
 			$$ = nouveau_node(RETURN_NODE);
 			$$->return_node.expression = $2;
 			if (current_function == NULL) {
-				yyerror("RETURN avec valeur dans une fonction void");
+				EMIT_ERROR("RETURN avec valeur dans une fonction void");
 			}
 			if (current_function->fonction.type == VOID_TYPE) {
-				yyerror("RETURN avec valeur dans une fonction void");
+				EMIT_ERROR("RETURN avec valeur dans une fonction void");
 			}
 	}
 ;
@@ -606,12 +604,10 @@ expression	:
 			// si la fonction est recursive 
 			Node *result = chercher_fonction($1);
 			if (result == NULL) {
-				char *s = malloc( strlen("Fonction non déclarée :") + strlen($1) + 1);
-				sprintf(s, "Fonction non déclarée : %s", $1);
-				error(s); // -> kill
+				EMIT_ERROR("Fonction utilisée mais jamais déclarée : %s", $1);
 			}
 			if (result->type != FONCTION) {
-				yyerror("Identificateur utilisé comme fonction");
+				EMIT_ERROR("Variable utilisée comme fonction : %s", $1);
 			}
 			if (result->type == FONCTION) {
 				// on verifie si le nombre d'arguments est correct
@@ -624,7 +620,8 @@ expression	:
 					i++;
 				}
 				if (tmp != NULL || tmp2 != NULL) {
-					yyerror("Nombre d'arguments incorrect");
+					// EMIT_ERROR("Nombre d'arguments incorrect : %s, attendu %d, trouvé %d", $1, result->fonction.nombre_parametres, i);
+					EMIT_ERROR("Nombre d'arguments incorrect : %s", $1);
 				}
 				NodeList *indices = $3; // try
             	while (indices) {
@@ -694,36 +691,13 @@ binary_comp	:
 ;
 %%
 
-void warn(char *s) {
-	fprintf(stderr, COLOR_PURPLE);
-	fprintf(stderr, "Warning: ");
-	fprintf(stderr, RESET_COLOR);
-	fprintf(stderr, "%s\n", s);
-	fprintf(stderr, "Warning at line %d\n", yylineno);
-	fprintf(stderr, "Warning near: %s\n", yytext);
-}
-
 void yyerror(char *s) {
-	fprintf(stderr, COLOR_RED);
-	fprintf(stderr, "Error: ");
-	fprintf(stderr, RESET_COLOR);
+	fprintf(stderr, COLOR_RED "[Error] "RESET_COLOR);
 	fprintf(stderr, "%s\n", s);
-	fprintf(stderr, "Error at line %d\n", yylineno);
-	fprintf(stderr, "Error near: %s\n", yytext);
+    fprintf(stderr, "        at line %d, near '%s'\n", yylineno, yytext); \
 	exit(1);
 }
 
-void error(char *s) {
-	/*comme yyerror mais avec un free*/
-	fprintf(stderr, COLOR_RED);
-	fprintf(stderr, "Error: ");
-	fprintf(stderr, RESET_COLOR);
-	fprintf(stderr, "%s\n", s);
-	fprintf(stderr, "Error at line %d\n", yylineno);
-	fprintf(stderr, "Error near: %s\n", yytext);
-	free(s);
-	exit(1);
-}
 
 int main(int argc, char **argv) {
 	if (argc > 1) {
@@ -749,23 +723,3 @@ int main(int argc, char **argv) {
 	
     return 0;
 }
-
-
-
-/*
-Node *result = chercher_variable($1);
-if (result == NULL) {
-	char *s = malloc( strlen("Variable utilisée mais jamais déclarée :") + strlen($1) + 1);
-	sprintf(s, "Variable utilisée mais jamais déclarée : %s", $1);
-	error(s); // -> kill
-}
-if (result->symbole.isInitialized == 0) {
-	char *s = malloc( strlen("Variable utilisée mais jamais initialisée :") + strlen($1) + 1);
-	sprintf(s, "Variable utilisée mais jamais initialisée : %s", $1);
-	printf("------WARNING : Variable utilisée mais jamais initialisée : %s\n", $1);
-	// WARNING -------------- A FAIRE
-	// warning(s); // -> warning
-}
-
-
-*/
