@@ -88,12 +88,9 @@ int mode_affectation = 0; // mode déclaration ou pas
 %nonassoc MOINSUNAIRE		   // moins unaire non associatif
 %left REL
 
-
 %start programme
 
-
-/* %type <entier> expression */
-%type <chaine> binary_comp
+%type <chaine> binary_comp binary_rel
 %type <type> type
 
 %type <node> declarateur parm fonction variable affectation instruction selection saut condition expression bloc
@@ -148,13 +145,7 @@ programme	:
         fermer_graphe(); // fermeture fichier dot
         DEBUG_PRINT(">> Graphe DOT généré avec succès.\n");
 		
-
-
-		// free_liste(liste_fonctions); // on libère la liste de fonctions
-		// free_list($1); // on libère la liste de déclarations
-		// free_list($2); // on libère la liste de fonctions
-		// free_all(); // on libère la table de symboles
-		
+		// free partielement, gérés, rique de segfault
 		// free_table($1);
 		// printf(COLOR_PURPLE "------------------------------------------------\n" RESET_COLOR);
 		// free_list($2);
@@ -197,7 +188,6 @@ liste_declarations	:
 
 liste_fonctions	:	
 		liste_fonctions fonction {
-			// printf(COLOR_GREEN "1 : append_node : %s\n" RESET_COLOR, $2->fonction.nom);
 			if (append_node($1, $2)) {
 				EMIT_ERROR("Redeclaration de la fonction : %s", $2->fonction.nom);
 			}
@@ -205,7 +195,6 @@ liste_fonctions	:
 		}
 	|	fonction {
 			$$ = nouveau_node_list($1);
-			// printf(COLOR_GREEN "1 : Node LIST %d" RESET_COLOR "\n", $$->id);
 		}
 ;
 
@@ -234,14 +223,12 @@ liste_declarateurs	:
 		liste_declarateurs ',' declarateur {
 			// on ajoute declarateur au début de la liste
 			// on verifie pas encore si la variable existe déjà
-			// printf(COLOR_GREEN "2 : append_node : %s\n" RESET_COLOR, $3->symbole.nom);
 			if (append_node($1, $3)) {
 				EMIT_ERROR("Variable déjà déclarée dans cette portée : %s", $3->symbole.nom);
 			}
 		}
 	|	declarateur {
 		$$ = nouveau_node_list($1);
-		// printf(COLOR_GREEN "2 : Node LIST %d" RESET_COLOR "\n", $$->id);
 	}
 ;
 
@@ -285,7 +272,6 @@ fonction:
 			$$ = $6;
 			$$->fonction.type = $1;
 			$$->fonction.bloc = $7;
-			// printf(COLOR_GREEN "3 : append_node : %s\n" RESET_COLOR, $$->fonction.nom);
 			append_node(liste_fonctions, $$);
 			pop_table(); // fermeture de bloc
 			current_function = NULL; // on remet la fonction courante à NULL
@@ -298,7 +284,6 @@ fonction:
 			$$->fonction.bloc = NULL;
 			$$->fonction.externe = 1; // on met la fonction comme externe
 
-			// printf(COLOR_GREEN "4 : append_node : %s\n" RESET_COLOR, $$->fonction.nom);
 			append_node(liste_fonctions, $$); //! VERIFIER L'UTILITÉ
 			ajouter_fonction($$); // on ajoute la fonction à la table de symboles courante
 		}
@@ -314,11 +299,9 @@ type:
 liste_parms	:	
 		parm	{
 			$$ = nouveau_node_list($1);
-			// printf(COLOR_GREEN "3 : Node LIST %d" RESET_COLOR "\n", $$->id);
 		}
 	|	liste_parms ',' parm	{
 			$$ = $1;
-			// printf(COLOR_GREEN "4 : append_node : %s\n" RESET_COLOR, $3->parametre.nom);
 			if (append_node($$, $3)) {
 				EMIT_ERROR("Paramètre déjà déclaré dans cette fonction : %s", $3->parametre.nom);
 			}
@@ -339,17 +322,12 @@ parm	:
 
 liste_instructions :	
 		liste_instructions instruction {
-			// on ajoute instruction a la fin de la liste
-			// on verifie pas encore si la variable existe déjà
 			if ($1 == NULL) {
 				$$ = nouveau_node_list($2);	
-				// printf(COLOR_GREEN "4 : Node LIST %d" RESET_COLOR "\n", $$->id);			
 			} else {
 				// on ajoute instruction au début de la liste
-				// on verifie pas encore si la variable existe déjà
 				$$ = $1;
 				NodeList *nouv = nouveau_node_list($2);
-				// printf(COLOR_GREEN "5 : Node LIST %d" RESET_COLOR "\n", nouv->id);
 				nouv->suivant = NULL; // pour pas faire une boucle
 				
 				if ($$->suivant == NULL) {
@@ -394,6 +372,7 @@ instruction:
 debut_boucle:
 	{
 		in_loop = 1;
+		// pour la gestion des break
 	}
 
 iteration	:	
@@ -487,38 +466,6 @@ switch_default :
 		}
 ;
 
-/*
-|	SWITCH '(' expression ')' { in_switch = 1; } instruction				{
-			$$ = nouveau_node(SWITCH_NODE);
-			$$->switch_node.expression = $3;
-			$$->switch_node.instruction = $6;
-			in_switch = 0;
-		}
-*/
-
-/*
-	|	CASE CONSTANTE ':' {in_case = 1;} instruction {
-			$$ = nouveau_node(CASE_NODE);
-			$$->case_node.instruction = $5;
-			Node *cst = nouveau_node(EXPRESSION);
-			cst->expression.type = EXPRESSION_CONSTANTE;
-			cst->expression.valeur = $2;
-			cst->expression.evaluable = 1;
-			$$->case_node.constante = cst;
-			in_case = 0;
-			if (in_switch == 0) {
-				EMIT_ERROR("CASE hors d'un switch");
-			}
-		}
-	|	DEFAULT ':' instruction		{
-			if (in_switch == 0) {
-				EMIT_ERROR("DEFAULT hors d'un case");
-			}
-			$$ = nouveau_node(DEFAULT_NODE);
-			$$->default_node.instruction = $3;
-		}
-		*/
-
 saut	:	
 		BREAK ';'	{
 			$$ = nouveau_node(BREAK_NODE);
@@ -535,7 +482,7 @@ saut	:
 			if (current_function->fonction.type == ENTIER) {
 				EMIT_ERROR("RETURN sans valeur dans une fonction int");
 			}
-	}
+		}
 	|	RETURN expression ';'	{
 			$$ = nouveau_node(RETURN_NODE);
 			$$->return_node.expression = $2;
@@ -545,11 +492,10 @@ saut	:
 			if (current_function->fonction.type == VOID_TYPE) {
 				EMIT_ERROR("RETURN avec valeur dans une fonction void");
 			}
-	}
+		}
 ;
 
-affectation	: // try
-		
+affectation	:
 		variable '=' expression { // on véifie si expression contient une variable non initialisée
 			char *nom;
 			if (verifier_initialisation_expression($3, &nom)) {
@@ -615,32 +561,29 @@ variable	:	// quand on utilise une variable
 			$$ = result;
 		}
 	|	IDENTIFICATEUR dimension_utilisation {
-		// on verifie si la variable existe
-		int cpt = 0;
-		Node *result = chercher_symbole($1);
-		if (result == NULL) {
-			EMIT_ERROR("Variable utilisée mais jamais déclarée : %s", $1);
-		}
-		if (result->type == FONCTION) {
-			EMIT_ERROR("Fonction utilisée comme variable : %s", $1);
-		}
-		if (result->symbole.type != TABLEAU) {
-			EMIT_ERROR("Variable int utilisée comme tableau : %s", $1);
-		}
-		NodeList *tmp = $2;
-		while (tmp != NULL) {
-			cpt++;
-			tmp = tmp->suivant;
-		}
-		if (cpt != result->symbole.dimension) {
-			EMIT_ERROR("Nombre de dimensions incorrect : %s", $1);
-		}
-		$$ = nouveau_node(ACCES_TABLEAU);
-		$$->acces_tableau.variable = result;
-		$$->acces_tableau.liste_expressions = $2;
-		
-
-
+			// on verifie si la variable existe
+			Node *result = chercher_symbole($1);
+			if (result == NULL) {
+				EMIT_ERROR("Variable utilisée mais jamais déclarée : %s", $1);
+			}
+			if (result->type == FONCTION) {
+				EMIT_ERROR("Fonction utilisée comme variable : %s", $1);
+			}
+			if (result->symbole.type != TABLEAU) {
+				EMIT_ERROR("Variable int utilisée comme tableau : %s", $1);
+			}
+			int cpt = 0;
+			NodeList *tmp = $2;
+			while (tmp != NULL) {
+				cpt++;
+				tmp = tmp->suivant;
+			}
+			if (cpt != result->symbole.dimension) {
+				EMIT_ERROR("Nombre de dimensions incorrect : %s", $1);
+			}
+			$$ = nouveau_node(ACCES_TABLEAU);
+			$$->acces_tableau.variable = result;
+			$$->acces_tableau.liste_expressions = $2;
 	}
 ;
 
@@ -648,12 +591,10 @@ dimension_utilisation:
 		dimension_utilisation '[' expression ']' {
 			$$ = $1;
 			// on ajoute l'expression à la liste d'expressions
-			// printf(COLOR_GREEN "5 : append_node : %d\n" RESET_COLOR, $3->id);
 			append_node($$, $3);
 		}
 	|	'[' expression ']' {
 			$$ = nouveau_node_list($2);
-			// printf(COLOR_GREEN "7 : Node LIST %d" RESET_COLOR "\n", $$->id);
 		}
 
 
@@ -715,7 +656,6 @@ expression	:
 	|	IDENTIFICATEUR '(' liste_expressions ')' 	{ //appel de fonction 
 			// on verifie si la fonction existe
 			// on verifie si le nombre d'arguments est correct
-			// si la fonction est recursive 
 			Node *result = chercher_fonction($1);
 			if (result == NULL) {
 				EMIT_ERROR("Fonction utilisée mais jamais déclarée : %s", $1);
@@ -779,13 +719,24 @@ condition	:
 			$$ = nouveau_node(CONDITION_PARENTHESE);
 			$$->condition_parenthese.condition = $2;
 	}
+	|	condition binary_rel condition %prec REL {
+			// printf("Condition binaire \n");
+			$$ = nouveau_node(CONDITION_BINAIRE);
+			$$->condition_binaire.gauche = $1;
+			$$->condition_binaire.droite = $3;
+			$$->condition_binaire.operateur = $2;
+		}
 	|	expression binary_comp expression  { 
-			// printf("Condition binaire\n");
 			$$ = nouveau_node(CONDITION_BINAIRE);
 			$$->condition_binaire.gauche = $1;
 			$$->condition_binaire.droite = $3;
 			$$->condition_binaire.operateur = $2;
 	}
+;
+
+binary_rel	:	
+		LAND { $$ = strdup(yytext); }
+	|	LOR	 { $$ = strdup(yytext); }
 ;
 
 binary_comp	:	
