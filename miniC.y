@@ -349,24 +349,12 @@ liste_instructions :
 ;
 
 instruction:
-    affectation ';'			 { 
-		$$ = $1;
-	}
-  	| expression ';'           {
-		$$ = $1;
-	}
-	| iteration				 {
-		$$ = $1;
-	}
-	| selection 			 {
-		$$ = $1;
-	}
-	| saut					 {
-		$$ = $1;
-	}
-	| bloc	 				 {
-		$$ = $1;
-	}
+    affectation ';'		{ $$ = $1; }
+  	| expression ';'	{ $$ = $1; }
+	| iteration			{ $$ = $1; }
+	| selection			{ $$ = $1; }
+	| saut				{ $$ = $1; }
+	| bloc				{ $$ = $1; }
 ;
 
 debut_boucle:
@@ -429,7 +417,6 @@ switch_liste_instructions :
 liste_case :
 		liste_case switch_case {
 			// on ajoute switch_case a la fin de la liste
-			// append_node($1, $2);
 			if (append_node($1, $2)) {
 				EMIT_ERROR("Case avec la même constante déjà déclarée : %d", $2->case_node.constante->expression.valeur);
 			}
@@ -655,7 +642,6 @@ expression	:
 		}
 	|	IDENTIFICATEUR '(' liste_expressions ')' 	{ //appel de fonction 
 			// on verifie si la fonction existe
-			// on verifie si le nombre d'arguments est correct
 			Node *result = chercher_fonction($1);
 			if (result == NULL) {
 				EMIT_ERROR("Fonction utilisée mais jamais déclarée : %s", $1);
@@ -678,7 +664,6 @@ expression	:
 					i++;
 				}
 				if (tmp != NULL || tmp2 != NULL) {
-					// EMIT_ERROR("Nombre d'arguments incorrect : %s, attendu %d, trouvé %d", $1, result->fonction.nombre_parametres, i);
 					EMIT_ERROR("Nombre d'arguments incorrect : %s", $1);
 				}
 				NodeList *indices = $3; // try
@@ -698,7 +683,6 @@ expression	:
 
 liste_expressions	:	
 		liste_expressions ',' expression { 
-			// printf("Liste d'expressions \n");
 			$$ = $1;
 			append_node($$, $3);
 		}

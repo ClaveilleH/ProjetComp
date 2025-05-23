@@ -229,8 +229,7 @@ int generer_dot_node(Node *node) {
             break;
         }
         case CONDITION_PARENTHESE :
-            // int rien = generer_dot_node(node->condition_parenthese.condition);
-            // fleche(id, rien);
+            id = generer_dot_node(node->condition_parenthese.condition);
             break;
         case CONDITION_NOT :
             id = noeudPersonnalisable("NOT", "ellipse", "black", NULL);

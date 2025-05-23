@@ -19,20 +19,6 @@ NodeList **table_fonctions = NULL; // table de fonctions
 NodeList *malloc_list = NULL; // liste de mallocs pour le free
 int malloc_count = 0; // compteur de mallocs
 
-void free_all() {
-    NodeList *temp = malloc_list;
-    // while (temp != NULL) {
-    //     NodeList *next = temp->suivant;
-    //     free(temp->node);
-    //     temp->node == NULL;
-    //     free(temp);
-    //     temp = next;
-    // }
-    // free(pile_variables);
-    // free(pile_parametres);
-    // free(pile_fonctions);
-    free(table_fonctions);
-}
 
 void free_node(Node* node) {
     return;
@@ -69,7 +55,6 @@ void free_node(Node* node) {
             break;
             
     }
-    // printf("free node id: %d\n", node->id);
     free(node);
 }
 
@@ -138,7 +123,6 @@ int hash( char *nom ) {
 void push_table() {
     NodePile *nouvelle_pile = malloc(sizeof(NodePile));
     nouvelle_pile->id = malloc_count;
-    // printf("malloc pile id: %d\n", malloc_count++);
 
     nouvelle_pile->node = NULL;
     nouvelle_pile->suivant = pile_variables;
@@ -146,7 +130,6 @@ void push_table() {
 
     nouvelle_pile = malloc(sizeof(NodePile));
     nouvelle_pile->id = malloc_count;
-    // printf("malloc pile id: %d\n", malloc_count++);
     nouvelle_pile->node = NULL;
     nouvelle_pile->suivant = pile_parametres;
     pile_parametres = nouvelle_pile;
@@ -177,7 +160,6 @@ void pop_table() {
 Node *nouveau_node(NodeType type) {
     Node *node = malloc(sizeof(Node));
     node->id = malloc_count;
-    // printf("malloc node id: %d\n", malloc_count++);
     assert(node != NULL);
     node->type = type;
     if (type == SYMBOLE) {
@@ -189,11 +171,7 @@ Node *nouveau_node(NodeType type) {
     } else if (type == FONCTION) {
         node->fonction.nom = NULL;
         node->fonction.type = ENTIER;
-        // node->fonction.arguments = NULL;
-        // node->fonction.suivant = NULL;
     }
-    // printf(COLOR_GREEN "9 : append_node %d\n" RESET_COLOR, node->id);
-    // append_node(malloc_list, node);
     return node;
 }
 
@@ -210,7 +188,6 @@ NodeList *nouveau_node_list(Node *node) {
 
 NodeList **creer_node_table() {
     NodeList **nodeList = malloc(TAILLE * sizeof(NodeList *));
-    // printf("malloc nodeList table id: %d\n", malloc_count++);
     assert(nodeList != NULL);
     for (int i = 0; i < TAILLE; i++) {
         nodeList[i] = NULL;
@@ -222,11 +199,10 @@ int append_node(NodeList *list, Node *node) {
     // Ajoute l2 à la fin de l1
     if (list == NULL) {
         list = nouveau_node_list(node);
-        // printf(COLOR_GREEN "8 : Node LIST %d\n" RESET_COLOR, list->id);
         return 0; // Ajout réussi
     }
     NodeList *temp = list;
-    while (temp->suivant != NULL) {
+    while (temp->suivant != NULL) { // on verifie si le nom est déjà présent
         if (temp->node->type == SYMBOLE && node->type == SYMBOLE) {// si le type est SYMBOLE
             if (strcmp(temp->node->symbole.nom, node->symbole.nom) == 0) { // Vérifie si le nom est déjà présent
                 return 1; // Erreur d'ajout
@@ -281,8 +257,6 @@ Node *construire_expr_binaire(Node *gauche, Node *droite, char *op) {
     node->expression.gauche = gauche;
     node->expression.droite = droite;
     node->expression.operateur = strdup(op);
-    // evaluer(op2, gauche, droite, &node->expression.valeur, &node->expression.evaluable);
-
     return node;
 }
 
@@ -291,13 +265,11 @@ int ajouter_variable(Node *node) {
     NodeList **courant = pile_variables->node;
     if (courant == NULL) {
         pile_variables->node = creer_node_table();
-        // printf("Initialisation de la table de variables %d\n", malloc_count);
         courant = pile_variables->node;
     }
     int h = hash(node->symbole.nom);
     if (courant[h] == NULL) {
         courant[h] = nouveau_node_list(node);
-        // printf(COLOR_GREEN "10 : Node LIST %d\n" RESET_COLOR, courant[h]->id);
         return 0; // Ajout réussi
     }
     
@@ -312,27 +284,11 @@ int ajouter_variable(Node *node) {
         return 1; // Erreur d'ajout
     }
     temp->suivant = nouveau_node_list(node);
-    // printf(COLOR_GREEN "11 : Node LIST %d\n" RESET_COLOR, temp->suivant->id);
     
     return 0; // Ajout réussi
 }
 
 
-Node *chercher_variable(char *nom) {
-    int h = hash(nom);
-    NodeList **courant = pile_variables->node;
-    if (courant == NULL) {
-        return NULL; // Pas de variables dans la pile
-    }
-    NodeList *temp = courant[h];
-    while (temp != NULL) {
-        if (strcmp(temp->node->symbole.nom, nom) == 0) {
-            return temp->node; // Variable trouvée
-        }
-        temp = temp->suivant;
-    }
-    return NULL; // Variable non trouvée
-}
 
 Node *chercher_variable_profondeur_rec(char *nom, NodePile *pile) {
     if (pile == NULL) {
@@ -362,18 +318,15 @@ Node *chercher_variable_profondeur(char *nom) {
 int ajouter_parametre(Node *node) {
     // On ajoute le symbole à la pile de paramètres
     NodeList **courant = pile_parametres->node;
-    if (courant == NULL) {
+    if (courant == NULL) { // si la table n'a pas encore été créée
         pile_parametres->node = creer_node_table();
-        // printf("Initialisation de la table de paramètres %d\n", malloc_count);
         courant = pile_parametres->node;
     }
     int h = hash(node->parametre.nom);
     if (courant[h] == NULL) {
         courant[h] = nouveau_node_list(node);
-        // printf(COLOR_GREEN "13 : Node LIST %d\n" RESET_COLOR, courant[h]->id);
         return 0; // Ajout réussi
     }
-    // printf(COLOR_RED "7 : append_node %d\n" RESET_COLOR, courant[h]->id);
     append_node(courant[h], node);
     return 0; // Ajout réussi
 }
@@ -403,19 +356,16 @@ Node *chercher_parametre_profondeur(char *nom) {
 int ajouter_fonction(Node *node) {
     // On ajoute le symbole à la table de fonctions
     NodeList **courant = table_fonctions;
-    if (courant == NULL) {
+    if (courant == NULL) { // si la table n'a pas encore été créée
         table_fonctions = creer_node_table();
-        // printf("Initialisation de la table de fonctions %d\n", malloc_count);
         courant = table_fonctions;
     }
     int h = hash(node->fonction.nom);
     if (courant[h] == NULL) {
         courant[h] = nouveau_node_list(node);
-        // printf(COLOR_GREEN "13 : Node LIST %d\n" RESET_COLOR, courant[h]->id);
         return 0; // Ajout réussi
     }
     NodeList *temp = courant[h];
-    // printf(COLOR_RED "8 : append_node %d\n" RESET_COLOR, temp->id);
     return append_node(temp, node); // retourne 0 si l'ajout a réussi, 1 sinon
 }
 
@@ -509,12 +459,6 @@ int verifier_initialisation_expression(Node *expr, char **nom) {
 }
 
 
-
-
-NodePile *get_pile() {
-    return pile_variables;
-}
-
 void afficher_instructions2(char *header, NodeList *list) {
     if (list == NULL) {
         // printf("Aucune instruction\n");
@@ -527,6 +471,10 @@ void afficher_instructions2(char *header, NodeList *list) {
 }
 
 int evaluer_expression(Node *node, int *resultat, int *evaluable) {
+    /*
+    Fonction pour évaluer une expression, renvoie 0 si l'évaluation a réussi, 1 sinon.
+    Le resultat est stocké dans le pointeur "resultat" et la variable "evaluable" indique si l'expression est évaluable.
+    */
     if (node->type != EXPRESSION) {
         if (node->type == SYMBOLE) {
             if (node->symbole.evaluable) {
@@ -622,7 +570,6 @@ int evaluer_expression(Node *node, int *resultat, int *evaluable) {
                     *evaluable = 0;
                     return 1; // Erreur d'évaluation
             }
-            // printf("resultat: %d\n", *resultat);
             node->expression.valeur = *resultat;
             node->expression.evaluable = 1;
             *evaluable = 1;
@@ -637,6 +584,11 @@ int evaluer_expression(Node *node, int *resultat, int *evaluable) {
 }
 
 void afficher_node2(char *header, Node *node) {
+    /*
+    Fonction pour afficher un noeud de l'arbre syntaxique.
+    Rien d'interessant ici, juste des switch case 
+    et de l'affichage en gérant l'affichage de la profondeur pour plus de lisibilité.
+    */
     if (node == NULL) {
         printf("%sAucun noeud\n", header ? header : "");
         return;
@@ -832,158 +784,3 @@ void afficher_node2(char *header, Node *node) {
     }
     free(header2);
 }
-
-
-/*
-
-int evaluer(int operateur, Node *gauche, Node *droite, int *resultat, int *evaluable) {
-    int valeur_gauche = 0;
-    int valeur_droite = 0;
-    if (gauche->type == SYMBOLE) {
-        if (gauche->symbole.evaluable) {
-            valeur_gauche = gauche->symbole.valeur;
-        } else {
-            *evaluable = 0;
-            return 1; // Erreur d'évaluation
-        }
-    } else if (gauche->type == EXPRESSION) {
-        if (gauche->expression.evaluable) {
-            valeur_gauche = gauche->expression.valeur;
-        } else {
-            *evaluable = 0;
-            return 1; // Erreur d'évaluation
-        }
-    } else {
-        *evaluable = 0;
-        return 1; // Erreur d'évaluation
-    }
-    if (droite->type == SYMBOLE) {
-        if (droite->symbole.evaluable) {
-            valeur_droite = droite->symbole.valeur;
-        } else {
-            *evaluable = 0;
-            return 1; // Erreur d'évaluation
-        }
-    } else if (droite->type == EXPRESSION) {
-        if (droite->expression.evaluable) {
-            valeur_droite = droite->expression.valeur;
-        } else {
-            *evaluable = 0;
-            return 1; // Erreur d'évaluation
-        }
-    } else {
-        *evaluable = 0;
-        return 1; // Erreur d'évaluation
-    }
-    switch (operateur) {
-        case '+':
-            *resultat = valeur_gauche + valeur_droite;
-            break;
-        case '-':
-            *resultat = valeur_gauche - valeur_droite;
-            break;
-        case '*':
-            *resultat = valeur_gauche * valeur_droite;
-            break;
-        case '/':
-            if (valeur_droite == 0) {
-                *evaluable = 0;
-                return 1; // Erreur de division par zéro
-            }
-            *resultat = valeur_gauche / valeur_droite;
-            break;
-        case '&':
-            *resultat = valeur_gauche & valeur_droite;
-            break;
-        case '|':
-            *resultat = valeur_gauche | valeur_droite;
-            break;
-        case '<':
-            printf("aaaaaaaaaaaaaaaaaaaa\n");
-            *resultat = valeur_gauche << valeur_droite;
-            break;
-        case '>':
-            *resultat = valeur_gauche >> valeur_droite;
-            break;
-        default:
-            *evaluable = 0;
-            return 1; // Erreur d'évaluation
-    }
-    *evaluable = 1;
-    return 0; // Évaluation réussie
-}
-
-Node *reduire_expression(Node *node) {
-    if (node->type == EXPRESSION) {
-        if (node->expression.type == EXPRESSION_BINAIRE) {
-            node->expression.gauche = reduire_expression(node->expression.gauche);
-            node->expression.droite = reduire_expression(node->expression.droite);
-            if (node->expression.gauche->type == EXPRESSION && node->expression.droite->type == EXPRESSION) {
-                int resultat;
-                int evaluable;
-                if (evaluer(node->expression.operateur[0], node->expression.gauche, node->expression.droite, &resultat, &evaluable) == 0) {
-                    Node *nouveau = nouveau_node(EXPRESSION);
-                    nouveau->expression.type = EXPRESSION_CONSTANTE;
-                    nouveau->expression.valeur = resultat;
-                    nouveau->expression.evaluable = 1;
-                    free(node->expression.gauche);
-                    free(node->expression.droite);
-                    free(node->expression.operateur);
-                    free(node);
-                    return nouveau;
-                }
-                printf("Non evaluable 1\n");
-            }
-            if (node->expression.gauche->type == EXPRESSION && node->expression.droite->type == SYMBOLE) {
-                int resultat;
-                int evaluable;
-                if (evaluer(node->expression.operateur[0], node->expression.gauche, node->expression.droite, &resultat, &evaluable) == 0) {
-                    Node *nouveau = nouveau_node(EXPRESSION);
-                    nouveau->expression.type = EXPRESSION_CONSTANTE;
-                    nouveau->expression.valeur = resultat;
-                    nouveau->expression.evaluable = 1;
-                    free(node->expression.gauche);
-                    free(node->expression.operateur);
-                    free(node);
-                    return nouveau;
-                }
-                printf("Non evaluable 2\n");
-            }
-            if (node->expression.gauche->type == SYMBOLE && node->expression.droite->type == EXPRESSION) {
-                int resultat;
-                int evaluable;
-                if (evaluer(node->expression.operateur[0], node->expression.gauche, node->expression.droite, &resultat, &evaluable) == 0) {
-                    Node *nouveau = nouveau_node(EXPRESSION);
-                    nouveau->expression.type = EXPRESSION_CONSTANTE;
-                    nouveau->expression.valeur = resultat;
-                    nouveau->expression.evaluable = 1;
-                    free(node->expression.droite);
-                    free(node->expression.operateur);
-                    free(node);
-                    return nouveau;
-                }
-                printf("Non evaluable 3\n");
-            }
-            if (node->expression.gauche->type == SYMBOLE && node->expression.droite->type == SYMBOLE) {
-                int resultat;
-                int evaluable;
-                if (evaluer(node->expression.operateur[0], node->expression.gauche, node->expression.droite, &resultat, &evaluable) == 0) {
-                    Node *nouveau = nouveau_node(EXPRESSION);
-                    nouveau->expression.type = EXPRESSION_CONSTANTE;
-                    nouveau->expression.valeur = resultat;
-                    nouveau->expression.evaluable = 1;
-                    free(node->expression.operateur);
-                    free(node);
-                    return nouveau;
-                }
-                printf("Non evaluable 4\n");
-            }
-            printf("Non evaluable Type gauche : %d Type droite : %d\n", node->expression.gauche->type , node->expression.droite->type);
-            // Si l'évaluation échoue, on retourne l'expression d'origine
-            return node;
-        
-        }
-    }
-    return node;
-}
-*/
