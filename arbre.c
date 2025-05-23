@@ -722,6 +722,14 @@ void afficher_node2(char *header, Node *node) {
             afficher_node2(header2, node->condition_binaire.gauche);
             afficher_node2(header2, node->condition_binaire.droite);
             break;
+        case CONDITION_PARENTHESE :
+            printf("%s├── Condition entre parenthèses\n", header);
+            afficher_node2(header2, node->condition_parenthese.condition);
+            break;
+        case CONDITION_NOT :
+            printf("%s├── Condition NOT\n", header);
+            afficher_node2(header2, node->condition_not.condition);
+            break;
         case EXPRESSION :
             switch (node->expression.type) {
                 case EXPRESSION_BINAIRE :

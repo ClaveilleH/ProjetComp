@@ -13,7 +13,7 @@ typedef enum {
     IF_NODE, IF_ELSE_NODE,
     SWITCH_NODE, CASE_NODE, DEFAULT_NODE, 
     FOR_NODE, WHILE_NODE,
-    CONDITION_BINAIRE, CONDITION_UNAIRE, CONDITION_NOT,
+    CONDITION_BINAIRE, CONDITION_PARENTHESE, CONDITION_NOT,
     BREAK_NODE, RETURN_NODE, 
     EXPRESSION,
     AFFECTATION,
@@ -48,7 +48,7 @@ typedef struct Node { //! est-ce qu'il faut pas faire des nodes pour les express
         struct { Node *condition; Node *instruction; } while_node;
 
         struct {Node *gauche; Node *droite; char *operateur; } condition_binaire;
-        struct {} condition_unaire;
+        struct { Node *condition; } condition_parenthese;
         struct { Node *condition; } condition_not;
         struct { 
             ExpressionType type;

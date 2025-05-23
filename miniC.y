@@ -760,26 +760,24 @@ liste_expressions	:
 		liste_expressions ',' expression { 
 			// printf("Liste d'expressions \n");
 			$$ = $1;
-			// printf(COLOR_GREEN "6 : append_node : %d\n" RESET_COLOR, $3->id);
 			append_node($$, $3);
 		}
 	|	expression { 
-			// printf("Expression unique \n");
 			$$ = nouveau_node_list($1);
-			// printf(COLOR_GREEN "6 : Node LIST %d" RESET_COLOR "\n", $$->id);
 	}
 	|	/* epsilon */ { 
-			// printf("Liste d'expressions vide\n");
 			$$ = NULL; 
 	}
 ;
 
 condition	:	
 		NOT '(' condition ')' { 
-			printf("Condition NOT\n"); 
+			$$ = nouveau_node(CONDITION_NOT);
+			$$->condition_not.condition = $3;
 		}
 	|	'(' condition ')'  {
-		printf("Condition\n"); 
+			$$ = nouveau_node(CONDITION_PARENTHESE);
+			$$->condition_parenthese.condition = $2;
 	}
 	|	expression binary_comp expression  { 
 			// printf("Condition binaire\n");
