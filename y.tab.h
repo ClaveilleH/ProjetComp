@@ -54,8 +54,8 @@ extern int yydebug;
     YYEOF = 0,                     /* "end of file"  */
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
-    IDENTIFICATEUR = 258,          /* IDENTIFICATEUR  */
-    CONSTANTE = 259,               /* CONSTANTE  */
+    CONSTANTE = 258,               /* CONSTANTE  */
+    IDENTIFICATEUR = 259,          /* IDENTIFICATEUR  */
     VOID = 260,                    /* VOID  */
     INT = 261,                     /* INT  */
     FOR = 262,                     /* FOR  */
@@ -85,11 +85,9 @@ extern int yydebug;
     NEQ = 286,                     /* NEQ  */
     NOT = 287,                     /* NOT  */
     EXTERN = 288,                  /* EXTERN  */
-    NOM = 289,                     /* NOM  */
-    NB = 290,                      /* NB  */
-    THEN = 291,                    /* THEN  */
-    OP = 292,                      /* OP  */
-    REL = 293                      /* REL  */
+    THEN = 289,                    /* THEN  */
+    MOINSUNAIRE = 290,             /* MOINSUNAIRE  */
+    REL = 291                      /* REL  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -98,8 +96,8 @@ extern int yydebug;
 #define YYEOF 0
 #define YYerror 256
 #define YYUNDEF 257
-#define IDENTIFICATEUR 258
-#define CONSTANTE 259
+#define CONSTANTE 258
+#define IDENTIFICATEUR 259
 #define VOID 260
 #define INT 261
 #define FOR 262
@@ -129,30 +127,25 @@ extern int yydebug;
 #define NEQ 286
 #define NOT 287
 #define EXTERN 288
-#define NOM 289
-#define NB 290
-#define THEN 291
-#define OP 292
-#define REL 293
+#define THEN 289
+#define MOINSUNAIRE 290
+#define REL 291
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 24 "miniC.y"
+#line 52 "miniC.y"
 
-	double val;
-	char *chaine;
+    int entier;
+    char *chaine;
+	type_t type;
+
 	struct Node *node;
-	struct _nodeList *nodeList;
+	struct NodeList *node_list;
+	struct NodeList **node_table;
 
-	struct _variable *variable;
-	struct _variable **varTable;
-
-	// struct _functionList **functionTable;
-	struct _functionList *functionList_type;
-
-#line 156 "y.tab.h"
+#line 149 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -37,9 +37,9 @@ typedef struct Node { //! est-ce qu'il faut pas faire des nodes pour les express
         struct { Node *condition; Node *instruction; } if_node;
         struct { Node *condition; Node *instruction; Node *instruction_else; } if_else_node;
 
-        struct { Node *expression; Node *instruction; NodeList *liste_cases; Node *default_case;} switch_node;
+        struct { Node *expression; Node *instruction; NodeList *liste_cases; Node *default_case; } switch_node;
         struct { Node *constante; Node *instruction; Node *saut; } case_node;
-        struct { Node *instruction; Node *saut;} default_node;
+        struct { Node *instruction;  Node *saut;} default_node;
 
         struct { Node *init; Node *condition; Node *incr; Node *instruction; } for_node;
         struct { Node *condition; Node *instruction; } while_node;
@@ -89,7 +89,6 @@ typedef struct NodePile {
 Node *nouveau_node(NodeType type);
 NodeList *nouveau_node_list(Node *node);
 int append_node(NodeList *list, Node *node);
-int append_node_table(NodeList **table, Node *node);
 NodeList **creer_node_table();
 Node *construire_expr_binaire(Node *gauche, Node *droite, char *op);
 // Node *reduire_expression(Node *node);
