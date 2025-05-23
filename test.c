@@ -27,21 +27,25 @@ int a(int a, int b) {
     return a + b;
 }*/
 
-int m(int a, int b) {
-    int c;
-    a = printd(a);
-    switch (a) {
-        case 1:
-            c = 1;
-            c = 2;
-            break;
-        case 2:
-            c = 2;
-            break;
-        default:
-            c = 3;
-            break;
-    }
-    // a
-    // a = a(a, b, c);
+// int m(int a, int b) {
+//     int c;
+//     a = printd(a);
+//     switch (a) {
+//         case 1:
+//             c = 1;
+//             c = 2;
+//             break;
+//         case 2:
+//             c = 2;
+//             break;
+//         default:
+//             c = 3;
+//             break;
+//     }
+//     // a
+//     // a = a(a, b, c);
+// }
+
+void aaaa(){
+    int a, a, n;
 }

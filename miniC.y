@@ -43,6 +43,9 @@ FILE *file;
 
 NodeList *liste_fonctions = NULL; // liste globale des fonctions A SUPP
 Node *current_function = NULL; // fonction courante
+int in_loop = 0; // dans une boucle
+int in_switch = 0; // dans un switch
+int in_case = 0; // dans un case
 int mode_affectation = 0; // mode déclaration ou pas
 
 
@@ -201,6 +204,10 @@ liste_fonctions	:
 
 declaration	:	
 		type liste_declarateurs ';' {
+			NodeList *tmp = $2;
+			while (tmp != NULL) {
+				tmp = tmp->suivant;
+			}
 			$$ = $2;
 		}
 		// Déclaration avec initialisation
@@ -220,7 +227,9 @@ liste_declarateurs	:
 		liste_declarateurs ',' declarateur {
 			// on ajoute declarateur au début de la liste
 			// on verifie pas encore si la variable existe déjà
-			append_node($1, $3);
+			if (append_node($1, $3)) {
+				EMIT_ERROR("Variable déjà déclarée dans cette portée : %s", $3->symbole.nom);
+			}
 		}
 	|	declarateur {
 		$$ = nouveau_node_list($1);
@@ -233,6 +242,7 @@ declarateur:
 			// on verifie pas encore si la variable existe déjà
 			$$ = nouveau_node(SYMBOLE);
         	$$->symbole.nom = $1;
+			
 
 			ajouter_variable($$); // on ajoute la variable à la table de symboles courante
 		}
@@ -303,12 +313,13 @@ liste_parms	:
 	|   /* vide */ { $$ = NULL; }	
 ;
 
-parm: INT IDENTIFICATEUR {
-	$$ = nouveau_node(PARAMETRE);
-	$$->parametre.type = ENTIER;
-	$$->parametre.nom = $2;
+parm	: 
+	INT IDENTIFICATEUR {
+		$$ = nouveau_node(PARAMETRE);
+		$$->parametre.type = ENTIER;
+		$$->parametre.nom = $2;
 
-	ajouter_parametre($$); // on ajoute le paramètre à la table de symboles courante
+		ajouter_parametre($$); // on ajoute le paramètre à la table de symboles courante
 }
 ;
 
@@ -365,19 +376,25 @@ instruction:
 	}
 ;
 
+debut_boucle:
+	{
+		in_loop = 1;
+	}
 
 iteration	:	
-		FOR '(' affectation ';' condition ';' affectation ')' instruction  {
+		FOR '(' affectation ';' condition ';' affectation ')' debut_boucle instruction  {
 			$$ = nouveau_node(FOR_NODE);
 			$$->for_node.init = $3;
 			$$->for_node.condition = $5;
 			$$->for_node.incr = $7;
-			$$->for_node.instruction = $9;
+			$$->for_node.instruction = $10;
+			in_loop = 0;
 		}
-	|	WHILE '(' condition ')' instruction	{
+	|	WHILE '(' condition ')' debut_boucle instruction	{
 			$$ = nouveau_node(WHILE_NODE);
 			$$->while_node.condition = $3;
-			$$->while_node.instruction = $5;
+			$$->while_node.instruction = $6;
+			in_loop = 0;
 	}
 ;
 
@@ -393,21 +410,29 @@ selection	:
 			$$->if_else_node.condition = $3;
 			$$->if_else_node.instruction_else = $7;
 		}
-	|	SWITCH '(' expression ')' instruction				{
+	|	SWITCH '(' expression ')' { in_switch = 1; } instruction				{
 			$$ = nouveau_node(SWITCH_NODE);
 			$$->switch_node.expression = $3;
-			$$->switch_node.instruction = $5;
+			$$->switch_node.instruction = $6;
+			in_switch = 0;
 		}
-	|	CASE CONSTANTE ':' instruction						{
+	|	CASE CONSTANTE ':' {in_case = 1;} instruction						{
 			$$ = nouveau_node(CASE_NODE);
-			$$->case_node.instruction = $4;
+			$$->case_node.instruction = $5;
 			Node *cst = nouveau_node(EXPRESSION);
 			cst->expression.type = EXPRESSION_CONSTANTE;
 			cst->expression.valeur = $2;
 			cst->expression.evaluable = 1;
 			$$->case_node.constante = cst;
+			in_case = 0;
+			if (in_switch == 0) {
+				EMIT_ERROR("CASE hors d'un switch");
+			}
 		}
-	|	DEFAULT ':' instruction								{
+	|	DEFAULT ':' instruction		{
+			if (in_switch == 0) {
+				EMIT_ERROR("DEFAULT hors d'un case");
+			}
 			$$ = nouveau_node(DEFAULT_NODE);
 			$$->default_node.instruction = $3;
 		}
@@ -416,6 +441,9 @@ selection	:
 saut	:	
 		BREAK ';'	{
 			$$ = nouveau_node(BREAK_NODE);
+			if (in_loop == 0 && in_switch == 0) {
+				EMIT_ERROR("BREAK hors d'une boucle");
+			}
 		}
 	|	RETURN ';'	{
 			$$ = nouveau_node(RETURN_NODE);
@@ -496,8 +524,11 @@ variable	:	// quand on utilise une variable
 				}
 				EMIT_ERROR("Variable utilisée mais jamais déclarée : %s", $1);
 			}
-			 if (result->type == FONCTION) {
+			if (result->type == FONCTION) {
 				EMIT_ERROR("Fonction utilisée comme variable");
+			}
+			if (result->symbole.type == TABLEAU) {
+				EMIT_ERROR("Variable tableau utilisée comme int");
 			}
 			$$ = result;
 		}
@@ -610,6 +641,10 @@ expression	:
 				EMIT_ERROR("Variable utilisée comme fonction : %s", $1);
 			}
 			if (result->type == FONCTION) {
+				if (result->fonction.type == VOID_TYPE) {
+					EMIT_ERROR("Fonction void utilisée comme int : %s", $1);
+				}
+
 				// on verifie si le nombre d'arguments est correct
 				NodeList *tmp = $3;
 				NodeList *tmp2 = result->fonction.liste_parametres;

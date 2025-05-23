@@ -1,0 +1,31 @@
+- Les variables ne peuvent être déclarées que globalement ou ou début des fonctions
+
+- Les variables doivent être déclarées avant d'être utilisées
+
+- Une variable ne peut pas être déclarée plusieurs fois dans le même bloc
+
+- Une variable ne peut pas être déclarée dans un bloc d'une fonction si elle est déjà dans les paramètres de cette fonction
+
+- Mauvaise dimension de tableau
+
+- Fonction appelée mais pas définie
+(exemple : x = fact(y); sans int fact(int y) {})
+
+- Mauvais paramètres lors d'un appel de fonction
+(exemple : int add(int x, int y); a = add(x))
+
+- Incompatibilité des types
+(exemple : void func(); int x; x = func();)
+
+- Mauvais retour de fonction
+(exemple : void func() {return 0})
+
+- Division par 0 (warning)
+
+- Les règles des switchs
+
+- Les cases et les default au mauvais endroit
+
+- même case et plusieurs default dans un même switch
+
+- break hors d'un for/while/switch
