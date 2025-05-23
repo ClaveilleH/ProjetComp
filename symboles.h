@@ -89,6 +89,7 @@ typedef struct NodePile {
 Node *nouveau_node(NodeType type);
 NodeList *nouveau_node_list(Node *node);
 int append_node(NodeList *list, Node *node);
+int append_node_table(NodeList **table, Node *node);
 NodeList **creer_node_table();
 Node *construire_expr_binaire(Node *gauche, Node *droite, char *op);
 // Node *reduire_expression(Node *node);

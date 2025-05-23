@@ -140,10 +140,11 @@ Node *nouveau_node(NodeType type) {
     assert(node != NULL);
     node->type = type;
     if (type == SYMBOLE) {
-        node->symbole.nom = NULL;
         node->symbole.type = ENTIER;
-        node->symbole.valeur = 0;
-        node->symbole.dimension = 0;
+        node->symbole.valeur = 0; // valeur initiale à 0 
+        node->symbole.isInitialized = 0; // on met la variable comme non initialisée
+        node->symbole.evaluable = 0; // on met la variable comme non évaluable
+        node->symbole.dimension = 0; // dimension du tableau
     } else if (type == FONCTION) {
         node->fonction.nom = NULL;
         node->fonction.type = ENTIER;
@@ -210,6 +211,7 @@ int append_node(NodeList *list, Node *node) {
         // printf(COLOR_GREEN "8 : Node LIST %d\n" RESET_COLOR, temp->suivant->id);
         return 0; // Ajout réussi
 }
+
 
 Node *construire_expr_binaire(Node *gauche, Node *droite, char *op) {
     Node *node = nouveau_node(EXPRESSION);
