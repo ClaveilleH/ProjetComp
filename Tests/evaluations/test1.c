@@ -1,0 +1,1 @@
+/* On peut compiler un fichier vide */
