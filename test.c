@@ -68,12 +68,18 @@ int main(int a) {
     //     printd(a);
     //     break;
     case 1:
-    case 2:
+    case 5:
         printd(a);
         break;
-    case 2:
+    // case 2:
         break;
     default:
+        // continue; // pas dans miniC
+        printd(a);
         break;
     }
+}
+
+void aqsd() {
+    return;
 }

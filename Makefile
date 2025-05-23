@@ -29,6 +29,11 @@ $(YACC_GEN) $(YACC_HEADER): $(YACC_SRC)
 $(TARGET): $(LEX_GEN) $(YACC_GEN) $(C_SOURCES)
 	$(CC) -o $(TARGET) $(LEX_GEN) $(YACC_GEN) $(C_SOURCES) -lfl
 
+# Debug target
+debug: CFLAGS += -DDEBUG=1 -g
+debug: $(LEX_GEN) $(YACC_GEN) $(C_SOURCES)
+	$(CC) $(CFLAGS) -o $(TARGET) $(LEX_GEN) $(YACC_GEN) $(C_SOURCES) -lfl
+
 # Clean up generated and built files
 clean:
 	rm -f $(TARGET) $(LEX_GEN) $(YACC_GEN) $(YACC_HEADER) y.output

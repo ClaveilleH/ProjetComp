@@ -451,11 +451,12 @@ Node *chercher_symbole(char *nom) {
 
 // try
 //On teste si une variable est initialisée avant d'être utilisée
-int verifier_initialisation_expression(Node *expr) {
+int verifier_initialisation_expression(Node *expr, char **nom) {
     if (expr == NULL) return 0;
 
     switch (expr->type) {
         case SYMBOLE:
+            *nom = expr->symbole.nom;
             return (expr->symbole.isInitialized == 0);
 
         case EXPRESSION:
@@ -465,12 +466,12 @@ int verifier_initialisation_expression(Node *expr) {
 
                 case EXPRESSION_PARENTHESE:
                 case EXPRESSION_MOINS_UNAIRE:
-                    return verifier_initialisation_expression(expr->expression.expression);
+                    return verifier_initialisation_expression(expr->expression.expression, nom);
 
                 case EXPRESSION_BINAIRE:
                     return 
-                        verifier_initialisation_expression(expr->expression.gauche) ||
-                        verifier_initialisation_expression(expr->expression.droite);
+                        verifier_initialisation_expression(expr->expression.gauche, nom) ||
+                        verifier_initialisation_expression(expr->expression.droite, nom);
 
                 default:
                     return 0;
@@ -479,7 +480,7 @@ int verifier_initialisation_expression(Node *expr) {
         case APPEL_FONCTION: { // On vérifie les paramètres de l'appel de fonction
             NodeList *args = expr->appel_fonction.liste_expressions;
             while (args) {
-                if (verifier_initialisation_expression(args->node)) return 1;
+                if (verifier_initialisation_expression(args->node, nom)) return 1;
                 args = args->suivant;
             }
             return 0;
@@ -492,15 +493,15 @@ int verifier_initialisation_expression(Node *expr) {
 
             NodeList *indices = expr->acces_tableau.liste_expressions;
             while (indices) {
-                if (verifier_initialisation_expression(indices->node)) return 1;
+                if (verifier_initialisation_expression(indices->node, nom)) return 1;
                 indices = indices->suivant;
             }
             return 0;
         }
 
         case CONDITION_BINAIRE:
-            return verifier_initialisation_expression(expr->condition_binaire.gauche) ||
-                   verifier_initialisation_expression(expr->condition_binaire.droite);
+            return verifier_initialisation_expression(expr->condition_binaire.gauche, nom) ||
+                   verifier_initialisation_expression(expr->condition_binaire.droite, nom);
 
         default:
             return 0;
@@ -537,6 +538,18 @@ int evaluer_expression(Node *node, int *resultat, int *evaluable) {
                 return 1; // Erreur d'évaluation
             }
         }
+        if (node->type == PARAMETRE) {
+            *evaluable = 0;
+            return 1; // Erreur d'évaluation
+        }
+        if (node->type == FONCTION) {
+            *evaluable = 0;
+            return 1; // Erreur d'évaluation
+        }
+        if (node->type == ACCES_TABLEAU) {
+            *evaluable = 0;
+            return 1; // Erreur d'évaluation
+        }
         fprintf(stderr, "Erreur : le noeud n'est pas une expression\n");
         exit(1); //! TODO: gérer l'erreur
         /* Si il n'y a pas de probleme de grammaire normalement elle arrive jamais*/
@@ -553,6 +566,7 @@ int evaluer_expression(Node *node, int *resultat, int *evaluable) {
         evaluer_expression(node->expression.expression, &_valeur, &_evaluable);
         if (_evaluable) {
             *resultat = -_valeur;
+            node->expression.valeur = *resultat;
             node->expression.evaluable = 1;
             *evaluable = 1;
             return 0; // Évaluation réussie
@@ -610,7 +624,7 @@ int evaluer_expression(Node *node, int *resultat, int *evaluable) {
                     *evaluable = 0;
                     return 1; // Erreur d'évaluation
             }
-            printf("resultat: %d\n", *resultat);
+            // printf("resultat: %d\n", *resultat);
             node->expression.valeur = *resultat;
             node->expression.evaluable = 1;
             *evaluable = 1;

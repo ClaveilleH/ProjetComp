@@ -118,7 +118,7 @@ void free_table(NodeList **table);
 void free_all();
 
 //try
-int verifier_initialisation_expression(Node *expr);
+int verifier_initialisation_expression(Node *expr, char **nom);
 
 
 // A ENLEVER

@@ -38,6 +38,8 @@ Utilisation
 -----------
 Compilation :
     make
+    make debug # pour afficher l'arbre abstrait
+    make clean # pour nettoyer les fichiers générés
 
 Exécution :
     ./comp.out "fichier"

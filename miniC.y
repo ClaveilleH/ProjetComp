@@ -16,7 +16,9 @@ int generer_dot_node(Node *node);
 #define COLOR_PURPLE "\033[35m"
 #define COLOR_GREEN "\033[32m"
 #define RESET_COLOR "\033[0m"
-#define DEBUG 1
+#ifndef DEBUG
+#define DEBUG 0
+#endif
 
 #define EMIT_WARNING(fmt, ...) do { \
     fprintf(stderr, COLOR_PURPLE "[Warning] " RESET_COLOR fmt "\n", ##__VA_ARGS__); \
@@ -549,10 +551,14 @@ saut	:
 affectation	: // try
 		
 		variable '=' expression { // on véifie si expression contient une variable non initialisée
-			if (verifier_initialisation_expression($3)){
-				EMIT_WARNING("Variable utilisée sans être initialisée : %s", $3->symbole.nom);
+			char *nom;
+			if (verifier_initialisation_expression($3, &nom)) {
+				EMIT_WARNING("Variable utilisée sans être initialisée : %s", nom);
 			}
 			$1->symbole.isInitialized = 1; // on met la variable comme initialisée
+			int eval;
+			int res;
+			evaluer_expression($3, &res, &eval);
 			if ($3->expression.evaluable == 1) {
 				$1->symbole.valeur = $3->expression.valeur; // on affecte la valeur de l'expression à la variable
 				$1->symbole.evaluable = 1; // on met la variable comme évaluable
@@ -676,7 +682,7 @@ expression	:
 
 		}
     | 	expression DIV expression       			{ 
-			int res;
+			int res = 1;
 			int eval;
 			evaluer_expression($3, &res, &eval);
 			if (eval && res == 0) {
@@ -686,7 +692,6 @@ expression	:
 		}
 	|	expression LSHIFT expression 			{ 
 			$$ = construire_expr_binaire($1, $3, "<<");
-			
 		}
 	| 	expression RSHIFT expression 			{ 
 			$$ = construire_expr_binaire($1, $3, ">>");
@@ -737,9 +742,10 @@ expression	:
 					EMIT_ERROR("Nombre d'arguments incorrect : %s", $1);
 				}
 				NodeList *indices = $3; // try
+				char *nom;
             	while (indices) {
-                	if (verifier_initialisation_expression(indices->node)) {
-						EMIT_WARNING("Variable utilisée sans être initialisée : %s", indices->node->symbole.nom);
+                	if (verifier_initialisation_expression(indices->node, &nom)) {
+						EMIT_WARNING("Variable utilisée sans être initialisée : %s", nom);
 					}
                 	indices = indices->suivant;
             	}
