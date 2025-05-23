@@ -4,7 +4,7 @@ CC = gcc
 # Source files
 LEX_SRC = main.l
 YACC_SRC = miniC.y
-C_SOURCES = symboles.c genererDot.c
+C_SOURCES = arbre.c genererDot.c
 
 # Generated files
 LEX_GEN = lex.yy.c

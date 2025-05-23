@@ -1,6 +1,6 @@
 #ifndef GENERER_DOT_H
 #define GENERER_DOT_H
-#include "symboles.h"   // pour liste_fonctions_t
+#include "arbre.h"   // pour liste_fonctions_t
 
 
 // Génère un graphe DOT à partir d'un seul nœud (AST)

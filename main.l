@@ -2,7 +2,7 @@
 %option yylineno
 
 %{
-#include "symboles.h"
+#include "arbre.h"
 
 #include <stdio.h>
 #include <stdlib.h>

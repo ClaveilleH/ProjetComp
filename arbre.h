@@ -1,5 +1,5 @@
-#ifndef SYMBOLES_H
-#define SYMBOLES_H
+#ifndef ARBRE_H
+#define ARBRE_H
 #include <stdlib.h>
 
 #define TAILLE 103  //nombre premier 
@@ -122,4 +122,4 @@ int verifier_initialisation_expression(Node *expr);
 int hash(char *nom);
 NodePile *get_pile();
 
-#endif 
+#endif  // ARBRE_H

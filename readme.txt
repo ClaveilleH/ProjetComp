@@ -41,12 +41,13 @@ Compilation :
 
 Exécution :
     ./comp.out "fichier"
+    ou passer le fichier dans l'entree standard
 
 Sortie :
-    arbre.dot (fichier DOT à visualiser avec Graphviz)
+    graphe.dot (fichier DOT à visualiser avec Graphviz)
 
 Visualisation :
-    dot -Tpng arbre.dot -o arbre.png
+    dot -Tpng graphe.dot -o graphe.png
 
 Exemple
 -------

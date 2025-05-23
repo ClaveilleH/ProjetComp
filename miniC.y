@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "symboles.h"
+#include "arbre.h"
 #include "genererDot.h"
 
 void ouvrir_graphe();
@@ -16,7 +16,7 @@ int generer_dot_node(Node *node);
 #define COLOR_PURPLE "\033[35m"
 #define COLOR_GREEN "\033[32m"
 #define RESET_COLOR "\033[0m"
-#define DEBUG 1
+#define DEBUG 0
 
 #define EMIT_WARNING(fmt, ...) do { \
     fprintf(stderr, COLOR_PURPLE "[Warning] " RESET_COLOR fmt "\n", ##__VA_ARGS__); \
@@ -27,6 +27,12 @@ int generer_dot_node(Node *node);
     fprintf(stderr, COLOR_RED "[Error] " RESET_COLOR fmt "\n", ##__VA_ARGS__); \
     fprintf(stderr, "        at line %d, near '%s'\n", yylineno, yytext); \
     exit(1); \
+} while(0)
+
+#define DEBUG_PRINT(fmt, ...) do { \
+	if (DEBUG) { \
+		fprintf(stderr, fmt , ##__VA_ARGS__); \
+	} \
 } while(0)
 
 extern int yylineno;
@@ -97,54 +103,49 @@ int mode_affectation = 0; // mode déclaration ou pas
 %%
 programme	:	
 		liste_declarations liste_fonctions {
-			printf("Programme complet\n");
+			DEBUG_PRINT("Programme complet\n");
 			ouvrir_graphe();	// ouverture du fichier dot 
 
-			if (DEBUG) printf("Programme :\n");
-			if (DEBUG) printf("├── Déclarations globales\n");
+			DEBUG_PRINT("Programme :\n");
+			DEBUG_PRINT("├── Déclarations globales\n");
 			NodeList *tmp;
 			for (int i = 0; i < TAILLE; i++) {
 				if ($1[i] != NULL) {
 					tmp = $1[i];
 					while (tmp != NULL) {
-						// printf("│   ├── %s\n", tmp->node->symbole.nom);
 						if (DEBUG) afficher_node2("│   ├──", tmp->node);
-						// Génération du graphe pour chaque déclaration globale
-                    	// generer_dot_node(tmp->node);
-
 						tmp = tmp->suivant;
 					}
 				}
 			}
-			if (DEBUG) printf("└── Fonctions :\n");
+			DEBUG_PRINT("└── Fonctions :\n");
 			tmp = $2;
 			
 
 			while (tmp != NULL) {
 				generer_dot_node(tmp->node);
-				if (DEBUG) printf("    ├── %s\n", tmp->node->fonction.nom);
-				if (DEBUG) printf("    │	│\n");
-				if (DEBUG) printf("    │	├── Type : %s\n", tmp->node->fonction.type == ENTIER ? "int" : "void");
+				DEBUG_PRINT("    ├── %s\n", tmp->node->fonction.nom);
+				DEBUG_PRINT("    │	│\n");
+				DEBUG_PRINT("    │	├── Type : %s\n", tmp->node->fonction.type == ENTIER ? "int" : "void");
 				NodeList *tmp2 = tmp->node->fonction.liste_parametres;
-				if (DEBUG) printf("    │	├── Paramètres : (");
+				DEBUG_PRINT("    │	├── Paramètres : (");
 				while (tmp2 != NULL) {
-					if (DEBUG) printf("%s, ", tmp2->node->parametre.nom);
+					DEBUG_PRINT("%s, ", tmp2->node->parametre.nom);
 					tmp2 = tmp2->suivant;
 				}
 				if (tmp->node->fonction.externe) {
-					if (DEBUG) printf(") EXTERNE\n");
+					DEBUG_PRINT(") EXTERNE\n");
 					tmp = tmp->suivant;
-
 					continue;
 				} 
-				if (DEBUG) printf(")\n");
+				DEBUG_PRINT(")\n");
 				if (DEBUG) afficher_node2("    │	", tmp->node->fonction.bloc);
 				tmp = tmp->suivant;
-				
 			}
 		
         fermer_graphe(); // fermeture fichier dot
-        printf(">> Graphe DOT généré avec succès.\n");
+        DEBUG_PRINT(">> Graphe DOT généré avec succès.\n");
+		
 
 
 		// free_liste(liste_fonctions); // on libère la liste de fonctions
@@ -152,8 +153,9 @@ programme	:
 		// free_list($2); // on libère la liste de fonctions
 		// free_all(); // on libère la table de symboles
 		
-		// free_table($1);
-		// free_list($2);
+		free_table($1);
+		printf(COLOR_PURPLE "------------------------------------------------\n" RESET_COLOR);
+		free_list($2);
 		}
 ;
 
@@ -164,16 +166,19 @@ liste_declarations	:
 			while (tmp != NULL) {
 				int h = hash(tmp->node->symbole.nom);
 				if ($$[h] == NULL) { // si la ligne de la table est vide
+
 					// on ajoute le noeud à la table de hachage
 					$$[h] = tmp;
 					tmp = tmp->suivant;
 					$$[h]->suivant = NULL; // on met le suivant à NULL
 					// pour pas ajouter toute la liste chaînée
+
 				} else {
+
 					NodeList *tmp2 = $$[h];
 					while (tmp2 != NULL) { // on verifie si la variable existe déjà
 						if (strcmp(tmp2->node->symbole.nom, tmp->node->symbole.nom) == 0) {
-							EMIT_ERROR("Variable already declared in this scope");
+							EMIT_ERROR("Variable already declared in this scope : %s", tmp->node->symbole.nom);
 						}
 						tmp2 = tmp2->suivant;
 					}
@@ -183,13 +188,14 @@ liste_declarations	:
 				}
 			}
 		}
-	| /* epsilon */ {
+	| 	/* epsilon */ {
 			$$ = creer_node_table(); 
 		}
 ;
 
 liste_fonctions	:	
 		liste_fonctions fonction {
+			printf(COLOR_GREEN "1 : append_node : %s\n" RESET_COLOR, $2->fonction.nom);
 			if (append_node($1, $2)) {
 				EMIT_ERROR("Redeclaration de la fonction : %s", $2->fonction.nom);
 			}
@@ -197,8 +203,7 @@ liste_fonctions	:
 		}
 	|	fonction {
 			$$ = nouveau_node_list($1);
-			// printf(COLOR_GREEN "1 : Node LIST %d\n" RESET_COLOR, $$->id);
-				
+			printf(COLOR_GREEN "1 : Node LIST %d" RESET_COLOR "\n", $$->id);
 		}
 ;
 
@@ -227,12 +232,14 @@ liste_declarateurs	:
 		liste_declarateurs ',' declarateur {
 			// on ajoute declarateur au début de la liste
 			// on verifie pas encore si la variable existe déjà
+			printf(COLOR_GREEN "2 : append_node : %s\n" RESET_COLOR, $3->symbole.nom);
 			if (append_node($1, $3)) {
 				EMIT_ERROR("Variable déjà déclarée dans cette portée : %s", $3->symbole.nom);
 			}
 		}
 	|	declarateur {
 		$$ = nouveau_node_list($1);
+		printf(COLOR_GREEN "2 : Node LIST %d" RESET_COLOR "\n", $$->id);
 	}
 ;
 
@@ -276,6 +283,7 @@ fonction:
 			$$ = $6;
 			$$->fonction.type = $1;
 			$$->fonction.bloc = $7;
+			printf(COLOR_GREEN "3 : append_node : %s\n" RESET_COLOR, $$->fonction.nom);
 			append_node(liste_fonctions, $$);
 			pop_table(); // fermeture de bloc
 			current_function = NULL; // on remet la fonction courante à NULL
@@ -288,6 +296,7 @@ fonction:
 			$$->fonction.bloc = NULL;
 			$$->fonction.externe = 1; // on met la fonction comme externe
 
+			printf(COLOR_GREEN "4 : append_node : %s\n" RESET_COLOR, $$->fonction.nom);
 			append_node(liste_fonctions, $$); //! VERIFIER L'UTILITÉ
 			ajouter_fonction($$); // on ajoute la fonction à la table de symboles courante
 		}
@@ -303,9 +312,11 @@ type:
 liste_parms	:	
 		parm	{
 			$$ = nouveau_node_list($1);
+			printf(COLOR_GREEN "3 : Node LIST %d" RESET_COLOR "\n", $$->id);
 		}
 	|	liste_parms ',' parm	{
 			$$ = $1;
+			printf(COLOR_GREEN "4 : append_node : %s\n" RESET_COLOR, $3->parametre.nom);
 			if (append_node($$, $3)) {
 				EMIT_ERROR("Paramètre déjà déclaré dans cette fonction : %s", $3->parametre.nom);
 			}
@@ -329,12 +340,14 @@ liste_instructions :
 			// on ajoute instruction a la fin de la liste
 			// on verifie pas encore si la variable existe déjà
 			if ($1 == NULL) {
-				$$ = nouveau_node_list($2);				
+				$$ = nouveau_node_list($2);	
+				printf(COLOR_GREEN "4 : Node LIST %d" RESET_COLOR "\n", $$->id);			
 			} else {
 				// on ajoute instruction au début de la liste
 				// on verifie pas encore si la variable existe déjà
 				$$ = $1;
 				NodeList *nouv = nouveau_node_list($2);
+				printf(COLOR_GREEN "5 : Node LIST %d" RESET_COLOR "\n", nouv->id);
 				nouv->suivant = NULL; // pour pas faire une boucle
 				
 				if ($$->suivant == NULL) {
@@ -504,9 +517,6 @@ bloc :
 			$$ = nouveau_node(BLOC);
 			$$->bloc.table_declarations = $2;
 			$$->bloc.liste_instructions = $3;
-			// printf(COLOR_GREEN);
-			// printf("Bloc :\n");
-			// printf(RESET_COLOR);
         }
 ;
 
@@ -566,10 +576,12 @@ dimension_utilisation:
 		dimension_utilisation '[' expression ']' {
 			$$ = $1;
 			// on ajoute l'expression à la liste d'expressions
+			printf(COLOR_GREEN "5 : append_node : %d\n" RESET_COLOR, $3->id);
 			append_node($$, $3);
 		}
 	|	'[' expression ']' {
 			$$ = nouveau_node_list($2);
+			printf(COLOR_GREEN "7 : Node LIST %d" RESET_COLOR "\n", $$->id);
 		}
 
 
@@ -676,12 +688,13 @@ liste_expressions	:
 		liste_expressions ',' expression { 
 			// printf("Liste d'expressions \n");
 			$$ = $1;
+			printf(COLOR_GREEN "6 : append_node : %d\n" RESET_COLOR, $3->id);
 			append_node($$, $3);
 		}
 	|	expression { 
 			// printf("Expression unique \n");
 			$$ = nouveau_node_list($1);
-			// printf(COLOR_GREEN "6 : Node LIST %d\n" RESET_COLOR, $$->id);
+			printf(COLOR_GREEN "6 : Node LIST %d" RESET_COLOR "\n", $$->id);
 	}
 	|	/* epsilon */ { 
 			// printf("Liste d'expressions vide\n");

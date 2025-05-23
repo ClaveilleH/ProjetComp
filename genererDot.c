@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "symboles.h"
+#include "arbre.h"
 #include "genererDot.h"
 
 static int compteur = 0;

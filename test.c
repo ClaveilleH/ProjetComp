@@ -1,4 +1,4 @@
-extern int printd( int i );
+// extern int printd( int i );
 /*
 int main() {
     int b;
@@ -25,7 +25,7 @@ int main() {
 int a(int a, int b) {
     // a = c;
     return a + b;
-}*/
+}
 
 // int m(int a, int b) {
 //     int c;
@@ -46,6 +46,17 @@ int a(int a, int b) {
 //     // a = a(a, b, c);
 // }
 
-void aaaa(){
-    int a, a, n;
+// void aaaa(){
+//     int a, a, n;
+// }
+
+void qsd() {
+    int a,b,c;
+    int d;
+    int e, f, g;
+}
+    */
+
+int main() {
+
 }
